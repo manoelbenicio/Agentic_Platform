@@ -8,6 +8,44 @@ AgentVerse is an enterprise-grade SaaS platform for managing autonomous software
 
 **A CTO must see every agent, every cost, every risk — in one glance — and trust the platform to enforce budgets automatically.** If everything else fails, real-time cost visibility and budget enforcement across all agent vendors must work.
 
+## Platform Philosophy
+
+> **"Limitations never existed. This is a very old mindset."**
+
+AgentVerse follows the **Customer Sovereignty Principle**: the customer is paying, so the customer decides what they want. We never force a single mode of interaction. We never remove a capability because "it's too hard" or "the market doesn't do it." We deliver ALL of it.
+
+### The Three Commandments
+
+1. **Never Either/Or — Always ALL**
+   - If they want a **terminal/CLI view** — we deliver it.
+   - If they want a **web dashboard** — we deliver it.
+   - If they want a **3D futuristic command center** — we deliver it.
+   - If they want **all three simultaneously** — we deliver it.
+   - The market offers terminal OR dashboard. We offer terminal AND dashboard AND 3D AND whatever comes next.
+
+2. **Unlimited Drill-Down Depth**
+   - Every single component, metric, chart, and KPI must be explorable to the deepest level of data.
+   - No dead ends. Click a KPI → see the chart → click the bar → see the table → click the row → see the agent → see every single API call that agent made.
+   - The customer paid for the data. They get to explore ALL of it.
+
+3. **No Artificial Limitations**
+   - We never say "this tier doesn't support that view."
+   - We never say "the platform can't do that."
+   - We never say "that's a technical limitation."
+   - If the customer's pocket can pay for it, we build it, we deliver it, we support it.
+   - Limitations are a failure of engineering, not a product decision.
+
+### How This Manifests
+
+| Interaction Mode | Who Uses It | What They Get |
+|-----------------|-------------|---------------|
+| **Terminal/CLI** | DevOps, SRE, Platform Engineers | Full API access, scriptable, piped output, agent control |
+| **Dashboard** | Engineering Managers, FinOps | Rich charts, filters, drill-downs, exports |
+| **3D Command Center** | CTO, C-Suite, Boardroom | Immersive globe, neural topology, cinematic presentations |
+| **API** | External systems, CI/CD, automation | RESTful + WebSocket + SSE, full programmatic access |
+
+All four modes see the **same data, same permissions, same real-time state**. Zero feature divergence between modes.
+
 ## Requirements
 
 ### Validated
@@ -40,6 +78,10 @@ AgentVerse is an enterprise-grade SaaS platform for managing autonomous software
 - [ ] Audit logging — complete trail of agent actions, cost events, and user operations
 - [ ] Portuguese (pt-BR) interface — primary language at launch
 - [ ] Export/Reports — PDF, CSV, scheduled executive summaries
+- [ ] Multi-modal delivery — terminal CLI, web dashboard, 3D command center, and API — all modes, customer chooses
+- [ ] Unlimited drill-down — every component explorable to the deepest data level, zero dead ends
+- [ ] CLI/Terminal mode — full platform capability via terminal for DevOps/SRE workflows
+- [ ] API-first architecture — RESTful + WebSocket + SSE, full programmatic access for automation
 
 ### Out of Scope
 
@@ -96,6 +138,8 @@ Based on 5 architecture proposals evaluated:
 | 3-5 subscription tiers (not usage-based) | Enterprise procurement prefers predictable pricing | — Pending |
 | Full FinOps from v1 (not just tracking) | FinOps is the retention engine — tracking alone is commodity | — Pending |
 | Hybrid agent model (pre-built + BYOA) | Maximum flexibility, marketplace creates network effects | — Pending |
+| Customer Sovereignty Principle | "Limitations never existed" — customer chooses interaction mode, drill-down depth, and feature scope. Never artificially limit. | — Pending |
+| Multi-modal delivery (CLI + Dashboard + 3D + API) | Market offers either/or; we offer ALL. Zero feature divergence between modes. | — Pending |
 | Next.js 15 + shadcn/ui frontend | Proven stack, premium component library, SSR for SEO | — Pending |
 | Three.js + Globe.gl for 3D command center | Industry standard for WebGL globe visualization | — Pending |
 
