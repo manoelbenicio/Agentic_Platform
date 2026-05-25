@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#f4f6f9;--card:#ffffff;--border:#e2e7ef;
+--text:#1a2233;--text2:#5a6577;--text3:#8896a8;
+--blue:#1e5fff;--blue-light:#e8eeff;--blue-dark:#0f3fc7;
+--green:#0db06e;--green-bg:#e6f9f0;
+--red:#e53e3e;--red-bg:#fde8e8;
+--orange:#e9830c;--orange-bg:#fef3e2;
+--shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+--shadow-lg:0 4px 16px rgba(0,0,0,.08);
+--radius:10px;
+}
+html{font-size:14px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+
+/* Header */
+.header{background:linear-gradient(135deg,#0f1f3d 0%,#1a3566 100%);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{color:#fff;font-size:1.4rem;font-weight:700;letter-spacing:-.02em}
+.header h1 span{color:#6ea8fe;font-weight:400}
+.header-right{display:flex;align-items:center;gap:12px}
+.upload-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:500;transition:all .2s}
+.upload-btn:hover{background:rgba(255,255,255,.22)}
+#csvInput{display:none}
+.upload-status{color:#6ea8fe;font-size:.78rem;font-weight:500}
+
+/* Container */
+.container{max-width:1420px;margin:0 auto;padding:20px 24px 40px}
+
+/* Error */
+.error-bar{background:var(--red-bg);border:1px solid var(--red);color:var(--red);padding:10px 16px;border-radius:var(--radius);margin-bottom:16px;font-weight:500;display:none}
+
+/* Filters */
+.filters-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.filter-group select{padding:7px 32px 7px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--card);color:var(--text);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6577' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:150px;transition:border-color .2s}
+.filter-group select:focus{outline:none;border-color:var(--blue)}
+
+/* KPI Row */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi-label{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.kpi-value{font-family:'JetBrains Mono',monospace;font-size:1.28rem;font-weight:700;color:var(--text)}
+.kpi-value.positive{color:var(--green)}
+.kpi-value.accent{color:var(--blue)}
+
+/* Charts Grid */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-size:.92rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.chart-title .dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.chart-wrap{position:relative;width:100%;height:300px}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+
+/* Scenario Panel */
+.scenario-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 26px;box-shadow:var(--shadow)}
+.scenario-panel h3{font-size:.92rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.scenario-panel h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:16px;align-items:end}
+.scenario-field label{display:block;font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.scenario-field select,.scenario-field input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem;width:100%}
+.scenario-field input[type=range]{padding:0;margin-top:4px;accent-color:var(--blue)}
+.scenario-btn{padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;font-size:.85rem;transition:background .2s;white-space:nowrap}
+.scenario-btn:hover{background:var(--blue-dark)}
+.scenario-results{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.scenario-stat .s-label{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.scenario-stat .s-value{font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:700;margin-top:2px}
+.scenario-stat .s-value.up{color:var(--green)}
+.scenario-stat .s-value.down{color:var(--red)}
+
+/* Responsive */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.scenario-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr}.header{padding:16px}.container{padding:12px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>P&L Dashboard <span>| Financial Performance</span></h1>
+  <div class="header-right">
+    <span class="upload-status" id="uploadStatus"></span>
+    <label class="upload-btn" for="csvInput">&#8593; Upload CSV</label>
+    <input type="file" id="csvInput" accept=".csv">
+  </div>
+</div>
+
+<div class="container">
+  <div class="error-bar" id="errorBar"></div>
+
+  <!-- Filters -->
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Month</label>
+      <select id="filterMonth"><option value="all">All Months</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Quarter</label>
+      <select id="filterQuarter"><option value="all">All Quarters</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Region</label>
+      <select id="filterRegion"><option value="all">All Regions</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Product</label>
+      <select id="filterProduct"><option value="all">All Products</option></select>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value accent" id="kpiRevenue">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">COGS</div><div class="kpi-value" id="kpiCOGS">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Gross Profit</div><div class="kpi-value positive" id="kpiGP">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Gross Margin %</div><div class="kpi-value positive" id="kpiGM">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">OpEx Total</div><div class="kpi-value" id="kpiOpex">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">EBITDA</div><div class="kpi-value positive" id="kpiEBITDA">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">EBITDA Margin %</div><div class="kpi-value positive" id="kpiEM">—</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot"></span>Profitability Trend</div>
+      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot" style="background:var(--green)"></span>Profit Waterfall</div>
+      <div class="chart-wrap"><canvas id="chartWaterfall"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot" style="background:var(--orange)"></span>Product Profitability (Gross Margin %)</div>
+      <div class="chart-wrap"><canvas id="chartProduct"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot" style="background:#8b5cf6"></span>Expense Structure</div>
+      <div class="chart-wrap"><canvas id="chartExpense"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Scenario Panel -->
+  <div class="scenario-panel">
+    <h3><span class="dot"></span>Scenario Insight Panel</h3>
+    <div class="scenario-grid">
+      <div class="scenario-field">
+        <label>Expense Category</label>
+        <select id="scenarioCat">
+          <option value="marketing">Marketing</option>
+          <option value="payroll">Payroll</option>
+          <option value="technology">Technology</option>
+          <option value="logistics">Logistics</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="scenario-field">
+        <label>Change (%): <strong id="scenarioPctLabel">-10%</strong></label>
+        <input type="range" id="scenarioPct" min="-50" max="50" value="-10">
+      </div>
+      <div class="scenario-field" style="visibility:hidden">
+        <label>&nbsp;</label>
+      </div>
+      <button class="scenario-btn" onclick="runScenario()">Calculate</button>
+    </div>
+    <div class="scenario-results">
+      <div class="scenario-stat"><div class="s-label">Current EBITDA</div><div class="s-value" id="scenCurrent">—</div></div>
+      <div class="scenario-stat"><div class="s-label">Adjusted EBITDA</div><div class="s-value" id="scenAdjusted">—</div></div>
+      <div class="scenario-stat"><div class="s-label">EBITDA Change</div><div class="s-value" id="scenChange">—</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ——— Globals ———
+let DATA = [];
+let chartTrend, chartWaterfall, chartProduct, chartExpense;
+
+const EMBEDDED_CSV = atob("bW9udGgscmVnaW9uLHByb2R1Y3QscmV2ZW51ZSxjb2dzLGdyb3NzX3Byb2ZpdCxncm9zc19tYXJnaW4sbWFya2V0aW5nLHBheXJvbGwsdGVjaG5vbG9neSxsb2dpc3RpY3MsYWRtaW4sb3BleF90b3RhbCxlYml0ZGEsZWJpdGRhX21hcmdpbgoyMDI1LTAxLE5vcnRoIEFtZXJpY2EsUHJvZHVjdCBBLDg1Njc5NS45NywzODQzNzMuNTQsNDcyNDIyLjQzLDAuNTUxNCw1MTQwNy43NiwzNDI3MS44NCw4NTY3Ljk2LDE3MTM1LjkyLDg1NjcuOTYsMTE5OTUxLjQ0LDM1MjQ3MC45OSwwLjQxMTQKMjAyNS0wMSxOb3J0aCBBbWVyaWNhLFByb2R1Y3QgQiw0ODYxODcuMDksMjc0ODA3LjY3LDIxMTM3OS40MiwwLjQzNDgsMzQwMzMuMSwxOTQ0Ny40OCw0ODYxLjg3LDk3MjMuNzQsNDg2MS44Nyw3MjkyOC4wNiwxMzg0NTEuMzYsMC4yODQ4CjIwMjUtMDEsTm9ydGggQW1lcmljYSxQcm9kdWN0IEMsMzA3NjE2LjY1LDE4Mzg0OS43NSwxMjM3NjYuOSwwLjQwMjMsMTg0NTcuMCwxMjMwNC42NywzMDc2LjE3LDYxNTIuMzMsMzA3Ni4xNyw0MzA2Ni4zNCw4MDcwMC41NiwwLjI2MjMKMjAyNS0wMSxFdXJvcGUsUHJvZHVjdCBBLDU0NjUwMC41OCwyNTAxMTkuMywyOTYzODEuMjgsMC41NDIzLDMyNzkwLjAzLDE2Mzk1LjAyLDU0NjUuMDEsMTA5MzAuMDEsNTQ2NS4wMSw3MTA0NS4wOCwyMjUzMzYuMiwwLjQxMjMKMjAyNS0wMSxFdXJvcGUsUHJvZHVjdCBCLDI3Mjg5MC4zLDE1MTU3MC4yNiwxMjEzMjAuMDQsMC40NDQ2LDE5MTAyLjMyLDgxODYuNzEsMjcyOC45LDU0NTcuODEsMjcyOC45LDM4MjA0LjY0LDgzMTE1LjQsMC4zMDQ2CjIwMjUtMDEsRXVyb3BlLFByb2R1Y3QgQywxODE5OTQuODksMTA4MzQ5LjMzLDczNjQ1LjU2LDAuNDA0NywxMDkxOS42OSw1NDU5Ljg1LDE4MTkuOTUsMzYzOS45LDE4MTkuOTUsMjM2NTkuMzQwMDAwMDAwMDA0LDQ5OTg2LjIyLDAuMjc0NwoyMDI1LTAxLEFzaWEsUHJvZHVjdCBBLDY3NTI2My4wMSwyOTA5NDguNjgsMzg0MzE0LjMzLDAuNTY5MSw0MDUxNS43OCwyMDI1Ny44OSw2NzUyLjYzLDIwMjU3Ljg5LDY3NTIuNjMsOTQ1MzYuODIsMjg5Nzc3LjUxLDAuNDI5MQoyMDI1LTAxLEFzaWEsUHJvZHVjdCBCLDMzNTY1MS40NSwxODI3MjAuOTcsMTUyOTMwLjQ4LDAuNDU1NiwyMzQ5NS42LDEwMDY5LjU0LDMzNTYuNTEsMTAwNjkuNTQsMzM1Ni41MSw1MDM0Ny43MDAwMDAwMDAwMDQsMTAyNTgyLjc4LDAuMzA1NgoyMDI1LTAxLEFzaWEsUHJvZHVjdCBDLDIzNDQzMS44NCwxNDEzOTUuOCw5MzAzNi4wNCwwLjM5NjksMTQwNjUuOTEsNzAzMi45NiwyMzQ0LjMyLDcwMzIuOTYsMjM0NC4zMiwzMjgyMC40Nyw2MDIxNS41NywwLjI1NjkKMjAyNS0wMixOb3J0aCBBbWVyaWNhLFByb2R1Y3QgQSw4MDg4MjAuOCwzNTI1NDYuMzUsNDU2Mjc0LjQ1LDAuNTY0MSw0ODUyOS4yNSwzMjM1Mi44Myw4MDg4LjIxLDE2MTc2LjQyLDgwODguMjEsMTEzMjM0LjkyMDAwMDAwMDAxLDM0MzAzOS41MywwLjQyNDEKMjAyNS0wMixOb3J0aCBBbWVyaWNhLFByb2R1Y3QgQiw1MjM0OTEuMSwyODY3MzguMTksMjM2NzUyLjkxLDAuNDUyMywzNjY0NC4zOCwyMDkzOS42NCw1MjM0LjkxLDEwNDY5LjgyLDUyMzQuOTEsNzg1MjMuNjYsMTU4MjI5LjI1LDAuMzAyMwoyMDI1LTAyLE5vcnRoIEFtZXJpY2EsUHJvZHVjdCBDLDMyMjA4NC4zMywxODg2NjEuNzEsMTMzNDIyLjYyLDAuNDE0MiwxOTMyNS4wNiwxMjg4My4zNywzMjIwLjg0LDY0NDEuNjksMzIyMC44NCw0NTA5MS44LDg4MzMwLjgyLDAuMjc0MgoyMDI1LTAyLEV1cm9wZSxQcm9kdWN0IEEsNDk2NDkwLjkzLDIyMzk3MS42NCwyNzI1MTkuMjksMC41NDg5LDI5Nzg5LjQ2LDE0ODk0LjczLDQ5NjQuOTEsOTkyOS44Miw0OTY0LjkxLDY0NTQzLjgzLDIwNzk3NS40NiwwLjQxODkKMjAyNS0wMixFdXJvcGUsUHJvZHVjdCBCLDI2ODc2OC4yMSwxNDg4MzIuMjcsMTE5OTM1Ljk0LDAuNDQ2MiwxODgxMy43Nyw4MDYzLjA1LDI2ODcuNjgsNTM3NS4zNiwyNjg3LjY4LDM3NjI3LjU0LDgyMzA4LjQsMC4zMDYyCjIwMjUtMDIsRXVyb3BlLFByb2R1Y3QgQywxODU1MzQuNDQsMTEwNzc5LjQ3LDc0NzU0Ljk3LDAuNDAyOSwxMTEzMi4wNyw1NTY2LjAzLDE4NTUuMzQsMzcxMC42OSwxODU1LjM0LDI0MTE5LjQ2OTk5OTk5OTk5OCw1MDYzNS41LDAuMjcyOQoyMDI1LTAyLEFzaWEsUHJvZHVjdCBBLDY1OTYzNC4xNywzMDkwNTMuNjQsMzUwNTgwLjUzLDAuNTMxNSwzOTU3OC4wNSwxOTc4OS4wMyw2NTk2LjM0LDE5Nzg5LjAzLDY1OTYuMzQsOTIzNDguNzksMjU4MjMxLjc0LDAuMzkxNQoyMDI1LTAyLEFzaWEsUHJvZHVjdCBCLDM4NDYyOS43OSwyMDc0NzguMTEsMTc3MTUxLjY4LDAuNDYwNiwyNjkyNC4wOSwxMTUzOC44OSwzODQ2LjMsMTE1MzguODksMzg0Ni4zLDU3Njk0LjQ3LDExOTQ1Ny4yMSwwLjMxMDYKMjAyNS0wMixBc2lhLFByb2R1Y3QgQywyNjkyOTIuOTYsMTU4Mjg4LjEzLDExMTAwNC44MywwLjQxMjIsMTYxNTcuNTgsODA3OC43OSwyNjkyLjkzLDgwNzguNzksMjY5Mi45MywzNzcwMS4wMiw3MzMwMy44MSwwLjI3MjIKMjAyNS0wMyxOb3J0aCBBbWVyaWNhLFByb2R1Y3QgQSw4NzQ4MjcuNDksMzc2NTI4LjY0LDQ5ODI5OC44NSwwLjU2OTYsNTI0ODkuNjUsMzQ5OTMuMSw4NzQ4LjI3LDE3NDk2LjU1LDg3NDguMjcsMTIyNDc1Ljg0MDAwMDAwMDAxLDM3NTgyMy4wMSwwLjQyOTYKMjAyNS0wMyxOb3J0aCBBbWVyaWNhLFByb2R1Y3QgQiw0NDcyNzAuMDksMjQ2ODc5LjA1LDIwMDM5MS4wNCwwLjQ0OCwzMTMwOC45MSwxNzg5MC44LDQ0NzIuNyw4OTQ1LjQsNDQ3Mi43LDY3MDkwLjUxLDEzMzMwMC41MywwLjI5OAo=");
+
+// ——— CSV Parser ———
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h=>h.trim());
+  const required = ['month','region','product','revenue','cogs','gross_profit','gross_margin','marketing','payroll','technology','logistics','admin','opex_total','ebitda','ebitda_margin'];
+  const missing = required.filter(r=>!headers.includes(r));
+  if(missing.length){throw new Error('Missing columns: '+missing.join(', '));}
+  const numCols = ['revenue','cogs','gross_profit','gross_margin','marketing','payroll','technology','logistics','admin','opex_total','ebitda','ebitda_margin'];
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h,i)=>{obj[h]=vals[i]?vals[i].trim():''});
+    numCols.forEach(c=>{obj[c]=parseFloat(obj[c])||0});
+    return obj;
+  });
+}
+
+function getQuarter(m){const mo=parseInt(m.split('-')[1]);return 'Q'+Math.ceil(mo/3)}
+
+// ——— Filter Logic ———
+function populateFilters(){
+  const months=[...new Set(DATA.map(d=>d.month))].sort();
+  const quarters=[...new Set(months.map(getQuarter))].sort();
+  const regions=[...new Set(DATA.map(d=>d.region))].sort();
+  const products=[...new Set(DATA.map(d=>d.product))].sort();
+  fillSelect('filterMonth',months);
+  fillSelect('filterQuarter',quarters);
+  fillSelect('filterRegion',regions);
+  fillSelect('filterProduct',products);
+}
+function fillSelect(id,items){
+  const sel=document.getElementById(id);
+  const val=sel.value;
+  sel.innerHTML='<option value="all">All</option>';
+  items.forEach(i=>{const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o)});
+  if([...sel.options].some(o=>o.value===val))sel.value=val;
+}
+function getFiltered(){
+  const m=document.getElementById('filterMonth').value;
+  const q=document.getElementById('filterQuarter').value;
+  const r=document.getElementById('filterRegion').value;
+  const p=document.getElementById('filterProduct').value;
+  return DATA.filter(d=>{
+    if(m!=='all'&&d.month!==m)return false;
+    if(q!=='all'&&getQuarter(d.month)!==q)return false;
+    if(r!=='all'&&d.region!==r)return false;
+    if(p!=='all'&&d.product!==p)return false;
+    return true;
+  });
+}
+
+// ——— Formatting ———
+function fmt(n){if(Math.abs(n)>=1e6)return '$'+( n/1e6).toFixed(2)+'M';if(Math.abs(n)>=1e3)return '$'+(n/1e3).toFixed(1)+'K';return '$'+n.toFixed(0)}
+function fmtPct(n){return(n*100).toFixed(1)+'%'}
+
+// ——— KPIs ———
+function updateKPIs(rows){
+  const sum=(k)=>rows.reduce((a,r)=>a+r[k],0);
+  const rev=sum('revenue'),cogs=sum('cogs'),gp=sum('gross_profit'),opex=sum('opex_total'),ebitda=sum('ebitda');
+  const gm=rev?gp/rev:0, em=rev?ebitda/rev:0;
+  document.getElementById('kpiRevenue').textContent=fmt(rev);
+  document.getElementById('kpiCOGS').textContent=fmt(cogs);
+  document.getElementById('kpiGP').textContent=fmt(gp);
+  document.getElementById('kpiGM').textContent=fmtPct(gm);
+  document.getElementById('kpiOpex').textContent=fmt(opex);
+  document.getElementById('kpiEBITDA').textContent=fmt(ebitda);
+  document.getElementById('kpiEM').textContent=fmtPct(em);
+}
+
+// ——— Chart Colors ———
+const COLORS={blue:'#1e5fff',green:'#0db06e',orange:'#e9830c',red:'#e53e3e',purple:'#8b5cf6',cyan:'#06b6d4',pink:'#ec4899'};
+const EXPENSE_COLORS=['#1e5fff','#0db06e','#e9830c','#8b5cf6','#06b6d4'];
+
+// ——— Chart 1: Trend ———
+function updateTrend(rows){
+  const months=[...new Set(rows.map(d=>d.month))].sort();
+  const byMonth={};
+  months.forEach(m=>byMonth[m]={revenue:0,gp:0,ebitda:0});
+  rows.forEach(d=>{byMonth[d.month].revenue+=d.revenue;byMonth[d.month].gp+=d.gross_profit;byMonth[d.month].ebitda+=d.ebitda});
+  const cfg={
+    type:'line',
+    data:{
+      labels:months,
+      datasets:[
+        {label:'Revenue',data:months.map(m=>byMonth[m].revenue),borderColor:COLORS.blue,backgroundColor:COLORS.blue+'18',fill:true,tension:.35,pointRadius:4,pointHoverRadius:7,borderWidth:2.5},
+        {label:'Gross Profit',data:months.map(m=>byMonth[m].gp),borderColor:COLORS.green,backgroundColor:COLORS.green+'18',fill:true,tension:.35,pointRadius:4,pointHoverRadius:7,borderWidth:2.5},
+        {label:'EBITDA',data:months.map(m=>byMonth[m].ebitda),borderColor:COLORS.orange,backgroundColor:COLORS.orange+'18',fill:true,tension:.35,pointRadius:4,pointHoverRadius:7,borderWidth:2.5}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}},legend:{position:'bottom',labels:{usePointStyle:true,padding:16,font:{family:'DM Sans'}}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans'}}},y:{ticks:{callback:v=>fmt(v),font:{family:'JetBrains Mono',size:11}},grid:{color:'#e2e7ef88'}}},animation:{duration:600}}
+  };
+  if(chartTrend){chartTrend.destroy()}
+  chartTrend=new Chart(document.getElementById('chartTrend'),cfg);
+}
+
+// ——— Chart 2: Waterfall ———
+function updateWaterfall(rows){
+  const sum=(k)=>rows.reduce((a,r)=>a+r[k],0);
+  const rev=sum('revenue'),cogs=sum('cogs'),gp=sum('gross_profit'),opex=sum('opex_total'),ebitda=sum('ebitda');
+  // Waterfall: stacked bar with invisible base + visible portion
+  const labels=['Revenue','COGS','Gross Profit','OpEx','EBITDA'];
+  const values=[rev,-cogs,gp,-opex,ebitda];
+  // compute bases
+  const bases=[0, rev-cogs>rev?0:gp, 0, ebitda>gp?0:ebitda, 0];
+  // For a proper waterfall: Revenue starts at 0, COGS hangs from revenue, GP is the result, OpEx hangs from GP, EBITDA is result
+  const barBase=[0,gp,0,ebitda,0];
+  const barHeight=[rev,cogs,gp,opex,ebitda];
+  const barColors=[COLORS.blue,COLORS.red+'cc',COLORS.green,COLORS.red+'cc',COLORS.orange];
+
+  const cfg={
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'Base',data:barBase,backgroundColor:'transparent',borderWidth:0,hoverBackgroundColor:'transparent'},
+        {label:'Value',data:barHeight,backgroundColor:barColors,borderRadius:4,borderWidth:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{filter:item=>item.datasetIndex===1,callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed.y)}},legend:{display:false}},scales:{x:{grid:{display:false},stacked:true,ticks:{font:{family:'DM Sans',weight:600}}},y:{stacked:true,ticks:{callback:v=>fmt(v),font:{family:'JetBrains Mono',size:11}},grid:{color:'#e2e7ef88'}}},animation:{duration:600}}
+  };
+  if(chartWaterfall){chartWaterfall.destroy()}
+  chartWaterfall=new Chart(document.getElementById('chartWaterfall'),cfg);
+}
+
+// ——— Chart 3: Product Profitability ———
+function updateProduct(rows){
+  const products=[...new Set(rows.map(d=>d.product))].sort();
+  const byProd={};
+  products.forEach(p=>byProd[p]={rev:0,gp:0});
+  rows.forEach(d=>{byProd[d.product].rev+=d.revenue;byProd[d.product].gp+=d.gross_profit});
+  const margins=products.map(p=>byProd[p].rev?byProd[p].gp/byProd[p].rev:0);
+  const colors=products.map((_,i)=>[COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.cyan][i%5]);
+
+  const cfg={
+    type:'bar',
+    data:{
+      labels:products,
+      datasets:[{label:'Gross Margin %',data:margins,backgroundColor:colors,borderRadius:6,barPercentage:.6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:ctx=>fmtPct(ctx.parsed.y)}},legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',weight:600}}},y:{ticks:{callback:v=>fmtPct(v),font:{family:'JetBrains Mono',size:11}},grid:{color:'#e2e7ef88'},beginAtZero:true}},animation:{duration:600}}
+  };
+  if(chartProduct){chartProduct.destroy()}
+  chartProduct=new Chart(document.getElementById('chartProduct'),cfg);
+}
+
+// ——— Chart 4: Expense Donut ———
+function updateExpense(rows){
+  const sum=(k)=>rows.reduce((a,r)=>a+r[k],0);
+  const cats=['marketing','payroll','technology','logistics','admin'];
+  const labels=['Marketing','Payroll','Technology','Logistics','Admin'];
+  const vals=cats.map(c=>sum(c));
+
+  const cfg={
+    type:'doughnut',
+    data:{
+      labels:labels,
+      datasets:[{data:vals,backgroundColor:EXPENSE_COLORS,borderWidth:2,borderColor:'#fff',hoverOffset:8}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{tooltip:{callbacks:{label:ctx=>{const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ctx.label+': '+fmt(ctx.parsed)+' ('+fmtPct(ctx.parsed/total)+')';}}},legend:{position:'bottom',labels:{usePointStyle:true,padding:14,font:{family:'DM Sans'}}}},animation:{duration:600}}
+  };
+  if(chartExpense){chartExpense.destroy()}
+  chartExpense=new Chart(document.getElementById('chartExpense'),cfg);
+}
+
+// ——— Scenario ———
+document.getElementById('scenarioPct').addEventListener('input',function(){
+  document.getElementById('scenarioPctLabel').textContent=this.value+'%';
+});
+function runScenario(){
+  const rows=getFiltered();
+  const cat=document.getElementById('scenarioCat').value;
+  const pct=parseFloat(document.getElementById('scenarioPct').value)/100;
+  const currentEbitda=rows.reduce((a,r)=>a+r.ebitda,0);
+  const catTotal=rows.reduce((a,r)=>a+r[cat],0);
+  const saving=-catTotal*pct;// negative pct means reduction -> positive saving
+  const adjusted=currentEbitda+saving;
+  const change=adjusted-currentEbitda;
+  document.getElementById('scenCurrent').textContent=fmt(currentEbitda);
+  document.getElementById('scenAdjusted').textContent=fmt(adjusted);
+  const changeEl=document.getElementById('scenChange');
+  changeEl.textContent=(change>=0?'+':'')+fmt(change);
+  changeEl.className='s-value '+(change>=0?'up':'down');
+}
+
+// ——— Master Update ———
+function updateDashboard(){
+  const rows=getFiltered();
+  updateKPIs(rows);
+  updateTrend(rows);
+  updateWaterfall(rows);
+  updateProduct(rows);
+  updateExpense(rows);
+  runScenario();
+}
+
+// ——— Filter Events ———
+['filterMonth','filterQuarter','filterRegion','filterProduct'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',updateDashboard);
+});
+
+// ——— CSV Upload ———
+document.getElementById('csvInput').addEventListener('change',function(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      document.getElementById('errorBar').style.display='none';
+      DATA=parseCSV(ev.target.result);
+      populateFilters();
+      updateDashboard();
+      document.getElementById('uploadStatus').textContent='Loaded: '+file.name+' ('+DATA.length+' rows)';
+    }catch(err){
+      document.getElementById('errorBar').textContent='Upload Error: '+err.message;
+      document.getElementById('errorBar').style.display='block';
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ——— Init ———
+(function(){
+  try{
+    DATA=parseCSV(EMBEDDED_CSV);
+    populateFilters();
+    updateDashboard();
+  }catch(err){
+    document.getElementById('errorBar').textContent='Data Error: '+err.message;
+    document.getElementById('errorBar').style.display='block';
+  }
+})();
+</script>
+</body>
+</html>

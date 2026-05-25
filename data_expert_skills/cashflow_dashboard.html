@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cash Flow Dashboard</title>
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- PapaParse -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg: #0b0f1a;
+  --surface: #131825;
+  --surface2: #1a2035;
+  --surface3: #212840;
+  --border: #2a3150;
+  --border-light: #3a4570;
+  --text: #e8ecf4;
+  --text-muted: #8892a8;
+  --text-dim: #5a6480;
+  --accent: #4fc3f7;
+  --accent2: #7c4dff;
+  --green: #66bb6a;
+  --green-bg: rgba(102,187,106,0.12);
+  --red: #ef5350;
+  --red-bg: rgba(239,83,80,0.12);
+  --yellow: #ffd54f;
+  --yellow-bg: rgba(255,213,79,0.12);
+  --blue: #42a5f5;
+  --orange: #ff9800;
+  --purple: #ab47bc;
+  --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  transition: all 0.2s;
+}
+select, input {
+  font-family: var(--font);
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  outline: none;
+}
+select:focus, input:focus { border-color: var(--accent); }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app { max-width: 1600px; margin: 0 auto; padding: 16px; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+}
+.header-left h1 {
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-left p { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+.header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; padding: 8px 16px;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-secondary {
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: var(--red-bg); color: var(--red); }
+.btn-danger:hover { background: var(--red); color: #fff; }
+
+/* Controls Row */
+.controls-row {
+  display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.control-group { display: flex; align-items: center; gap: 6px; }
+.control-group label { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+
+/* Toggle */
+.toggle { display: flex; background: var(--surface2); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.toggle button { border-radius: 0; background: transparent; color: var(--text-muted); padding: 6px 14px; font-size: 0.8rem; }
+.toggle button.active { background: var(--accent); color: #fff; }
+
+/* KPI Cards */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.kpi-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+.kpi-card .kpi-label {
+  font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 600; margin-bottom: 6px;
+}
+.kpi-card .kpi-value {
+  font-size: 1.6rem; font-weight: 700; font-family: var(--mono);
+  letter-spacing: -0.02em;
+}
+.kpi-card .kpi-change {
+  font-size: 0.78rem; margin-top: 4px; display: flex; align-items: center; gap: 4px;
+}
+.kpi-card .kpi-change.up { color: var(--green); }
+.kpi-card .kpi-change.down { color: var(--red); }
+.kpi-card .kpi-change.neutral { color: var(--text-muted); }
+.kpi-card .kpi-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+.kpi-card .kpi-stripe {
+  position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+}
+
+/* Main Grid */
+.main-grid {
+  display: grid; grid-template-columns: 1fr 340px; gap: 16px;
+}
+@media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
+
+.charts-area { display: flex; flex-direction: column; gap: 16px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .chart-row { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; position: relative;
+}
+.panel-title {
+  font-size: 0.85rem; font-weight: 700; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+.chart-container { position: relative; width: 100%; }
+.chart-container canvas { width: 100% !important; }
+
+/* Sidebar */
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+.sidebar .panel { flex-shrink: 0; }
+.slider-group { margin-bottom: 14px; }
+.slider-group label {
+  display: flex; justify-content: space-between; font-size: 0.8rem;
+  color: var(--text-muted); margin-bottom: 4px;
+}
+.slider-group label span { color: var(--accent); font-family: var(--mono); font-weight: 600; }
+input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 6px; background: var(--surface3);
+  border-radius: 3px; border: none; outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--accent); border-radius: 50%; cursor: pointer;
+}
+
+/* Scenario presets */
+.preset-list { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
+.preset-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 8px; background: var(--surface2); border-radius: 4px;
+  font-size: 0.8rem; cursor: pointer;
+}
+.preset-item:hover { background: var(--surface3); }
+.preset-item .del { color: var(--red); cursor: pointer; font-weight: 700; }
+
+/* Alert bar */
+.alert-bar {
+  padding: 10px 16px; border-radius: 6px; font-size: 0.82rem;
+  margin-bottom: 12px; display: none;
+}
+.alert-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,83,80,0.3); display: block; }
+.alert-bar.warn { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(255,213,79,0.3); display: block; }
+.alert-bar.info { background: rgba(66,165,245,0.1); color: var(--blue); border: 1px solid rgba(66,165,245,0.3); display: block; }
+
+/* Data Table */
+.table-wrapper { overflow-x: auto; margin-top: 12px; }
+table.data-table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem;
+}
+table.data-table th {
+  background: var(--surface2); color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px;
+  text-align: right; border-bottom: 2px solid var(--border); cursor: pointer;
+  white-space: nowrap; user-select: none;
+}
+table.data-table th:first-child { text-align: left; }
+table.data-table td {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+  text-align: right; font-family: var(--mono); font-size: 0.78rem;
+}
+table.data-table td:first-child { text-align: left; color: var(--accent); }
+table.data-table tr:hover td { background: var(--surface2); }
+table.data-table .negative { color: var(--red); }
+
+/* Schema panel */
+.schema-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 16px; font-size: 0.78rem;
+  font-family: var(--mono); overflow-x: auto; margin-bottom: 12px;
+  line-height: 1.7; color: var(--text-muted);
+}
+.schema-box strong { color: var(--accent); }
+
+/* Footer */
+.footer {
+  margin-top: 16px; padding: 14px 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 0.78rem; color: var(--text-dim);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.footer a { color: var(--accent); }
+
+/* Collapse */
+.collapsible-header {
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+}
+.collapsible-header .chevron { transition: transform 0.2s; font-size: 0.9rem; color: var(--text-muted); }
+.collapsible-header.collapsed .chevron { transform: rotate(-90deg); }
+.collapsible-body { overflow: hidden; transition: max-height 0.3s ease; }
+.collapsible-body.collapsed { max-height: 0 !important; padding: 0; }
+
+/* Threshold alert */
+.threshold-alert {
+  background: var(--red-bg); color: var(--red); padding: 8px 12px;
+  border-radius: 6px; font-size: 0.8rem; margin-top: 8px; display: none;
+}
+
+/* Tooltip on KPI hover */
+.kpi-tooltip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--surface3); border: 1px solid var(--border-light);
+  padding: 8px 12px; border-radius: 6px; font-size: 0.75rem;
+  color: var(--text); white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s; z-index: 100;
+}
+.kpi-card:hover .kpi-tooltip { opacity: 1; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+
+/* hidden */
+.hidden { display: none !important; }
+
+/* pagination */
+.pagination { display: flex; gap: 4px; margin-top: 8px; align-items: center; justify-content: center; }
+.pagination button { padding: 4px 10px; font-size: 0.78rem; }
+.pagination button.active { background: var(--accent); color: #fff; }
+.pagination span { font-size: 0.78rem; color: var(--text-muted); }
+
+/* export row */
+.export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<div class="header fade-in">
+  <div class="header-left">
+    <h1>Cash Flow Dashboard</h1>
+    <p>Treasury &amp; Liquidity Visibility — Real-time cash position, working capital, and forecast scenarios</p>
+  </div>
+  <div class="header-right">
+    <label for="csvUpload" class="btn-primary" style="cursor:pointer;">
+      &#8593; Upload CSV
+    </label>
+    <input type="file" id="csvUpload" accept=".csv" style="display:none;">
+    <button class="btn-secondary" onclick="downloadTemplate()">&#8595; Template</button>
+    <button class="btn-secondary" onclick="toggleSchema()">&#9636; Schema</button>
+    <button class="btn-danger" id="btnReset" onclick="resetFilters()">Reset Filters</button>
+  </div>
+</div>
+
+<!-- Schema Panel (hidden by default) -->
+<div id="schemaPanel" class="panel fade-in hidden" style="margin-bottom:16px;">
+  <div class="panel-title"><span class="dot" style="background:var(--accent);"></span> Expected CSV Schema</div>
+  <div class="schema-box">
+    <strong>Required columns (case-sensitive):</strong><br>
+    month, operating_cash_flow, investing_cash_flow, financing_cash_flow, free_cash_flow,<br>
+    cash_balance_end, accounts_receivable, ar_0_30, ar_30_60, ar_60_90, ar_90_plus,<br>
+    accounts_payable, inventory<br><br>
+    <strong>Sample row:</strong><br>
+    2025-01, 716975.17, -51504.34, 148628.03, 665470.83, 8814098.86, 2960231.49, 1351137.92, 722553.20, 425949.37, 460591.01, 2203013.31, 1464768.68
+  </div>
+  <p style="font-size:0.78rem; color:var(--text-dim);">month = YYYY-MM format. All numeric fields in base currency. If aging buckets are missing, AR aging will not be available.</p>
+</div>
+
+<!-- Alerts -->
+<div id="alertBar" class="alert-bar"></div>
+
+<!-- Controls Row -->
+<div class="controls-row fade-in">
+  <div class="control-group">
+    <label>From</label>
+    <select id="monthFrom"></select>
+  </div>
+  <div class="control-group">
+    <label>To</label>
+    <select id="monthTo"></select>
+  </div>
+  <div class="control-group">
+    <label>View</label>
+    <div class="toggle" id="viewToggle">
+      <button class="active" data-val="latest" onclick="setView('latest')">Latest Month</button>
+      <button data-val="ytd" onclick="setView('ytd')">YTD</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-row fade-in" id="kpiRow">
+  <div class="kpi-card" id="kpiCashBal">
+    <div class="kpi-stripe" style="background:var(--accent);"></div>
+    <div class="kpi-label">Cash Balance</div>
+    <div class="kpi-value" id="kpiCashBalVal">—</div>
+    <div class="kpi-change neutral" id="kpiCashBalChg"></div>
+    <div class="kpi-sub" id="kpiCashBalSub"></div>
+  </div>
+  <div class="kpi-card" id="kpiOCF">
+    <div class="kpi-stripe" style="background:var(--green);"></div>
+    <div class="kpi-label">Operating Cash Flow</div>
+    <div class="kpi-value" id="kpiOCFVal">—</div>
+    <div class="kpi-change neutral" id="kpiOCFChg"></div>
+    <div class="kpi-sub" id="kpiOCFSub"></div>
+  </div>
+  <div class="kpi-card" id="kpiFCF">
+    <div class="kpi-stripe" style="background:var(--accent2);"></div>
+    <div class="kpi-label">Free Cash Flow</div>
+    <div class="kpi-value" id="kpiFCFVal">—</div>
+    <div class="kpi-change neutral" id="kpiFCFChg"></div>
+    <div class="kpi-sub" id="kpiFCFSub"></div>
+  </div>
+  <div class="kpi-card" id="kpiAR">
+    <div class="kpi-stripe" style="background:var(--orange);"></div>
+    <div class="kpi-label">Accounts Receivable</div>
+    <div class="kpi-value" id="kpiARVal">—</div>
+    <div class="kpi-change neutral" id="kpiARChg"></div>
+  </div>
+  <div class="kpi-card" id="kpiAP">
+    <div class="kpi-stripe" style="background:var(--purple);"></div>
+    <div class="kpi-label">Accounts Payable</div>
+    <div class="kpi-value" id="kpiAPVal">—</div>
+    <div class="kpi-change neutral" id="kpiAPChg"></div>
+  </div>
+  <div class="kpi-card" id="kpiRunway">
+    <div class="kpi-stripe" style="background:var(--yellow);"></div>
+    <div class="kpi-label">Cash Runway</div>
+    <div class="kpi-value" id="kpiRunwayVal">—</div>
+    <div class="kpi-change neutral" id="kpiRunwayChg"></div>
+    <div class="kpi-tooltip" id="kpiRunwayTip"></div>
+  </div>
+</div>
+
+<!-- Main Grid -->
+<div class="main-grid">
+  <!-- Charts Area -->
+  <div class="charts-area">
+    <!-- Row 1: Trend + Breakdown -->
+    <div class="chart-row">
+      <div class="panel fade-in">
+        <div class="panel-title"><span class="dot" style="background:var(--accent);"></span> Cash Flow Trend</div>
+        <div class="chart-container"><canvas id="chartTrend"></canvas></div>
+      </div>
+      <div class="panel fade-in">
+        <div class="panel-title"><span class="dot" style="background:var(--green);"></span> Cash Flow Breakdown</div>
+        <div class="chart-container"><canvas id="chartBreakdown"></canvas></div>
+      </div>
+    </div>
+    <!-- Row 2: Working Capital + AR Aging -->
+    <div class="chart-row">
+      <div class="panel fade-in">
+        <div class="panel-title"><span class="dot" style="background:var(--orange);"></span> Working Capital
+          <select id="wcMonthSelect" style="margin-left:auto; font-size:0.75rem;"></select>
+        </div>
+        <div class="chart-container"><canvas id="chartWC"></canvas></div>
+        <div id="nwcDisplay" style="margin-top:8px; font-size:0.82rem; font-family:var(--mono);"></div>
+      </div>
+      <div class="panel fade-in">
+        <div class="panel-title"><span class="dot" style="background:var(--red);"></span> Receivables Aging</div>
+        <div class="chart-container"><canvas id="chartAging"></canvas></div>
+        <div id="agingDetail" style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);"></div>
+      </div>
+    </div>
+    <!-- Forecast chart -->
+    <div class="panel fade-in">
+      <div class="panel-title"><span class="dot" style="background:var(--accent2);"></span> Cash Forecast — 6 Month Projection</div>
+      <div class="chart-container"><canvas id="chartForecast"></canvas></div>
+      <div class="threshold-alert" id="thresholdAlert"></div>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="exportForecastCSV()">&#8595; Export Forecast CSV</button>
+      </div>
+    </div>
+    <!-- Ledger Table -->
+    <div class="panel fade-in">
+      <div class="collapsible-header" onclick="toggleCollapse('ledgerBody', this)">
+        <div class="panel-title" style="margin-bottom:0;"><span class="dot" style="background:var(--blue);"></span> Drilldown Ledger</div>
+        <span class="chevron">&#9660;</span>
+      </div>
+      <div class="collapsible-body" id="ledgerBody">
+        <div style="display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; align-items:center;">
+          <input type="text" id="tableSearch" placeholder="Search..." style="flex:1; min-width:140px;" oninput="renderTable()">
+          <button class="btn-secondary" onclick="exportTableCSV()">&#8595; Export CSV</button>
+        </div>
+        <div class="table-wrapper" id="tableWrapper"></div>
+        <div class="pagination" id="tablePagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <!-- Scenario Panel -->
+    <div class="panel fade-in">
+      <div class="panel-title"><span class="dot" style="background:var(--accent2);"></span> Scenario Builder</div>
+      <div class="slider-group">
+        <label>Revenue Growth <span id="sliderRevVal">0%</span></label>
+        <input type="range" id="sliderRev" min="-30" max="50" value="0" oninput="updateSliderLabel('sliderRev','sliderRevVal','%')">
+      </div>
+      <div class="slider-group">
+        <label>Payment Delays <span id="sliderDelayVal">0%</span></label>
+        <input type="range" id="sliderDelay" min="0" max="50" value="0" oninput="updateSliderLabel('sliderDelay','sliderDelayVal','%')">
+      </div>
+      <div class="slider-group">
+        <label>Expense Increase <span id="sliderExpVal">0%</span></label>
+        <input type="range" id="sliderExp" min="0" max="50" value="0" oninput="updateSliderLabel('sliderExp','sliderExpVal','%')">
+      </div>
+      <div class="slider-group">
+        <label>Alert Threshold <span id="sliderThreshVal">€0</span></label>
+        <input type="range" id="sliderThresh" min="0" max="20000000" step="500000" value="5000000" oninput="updateSliderLabel('sliderThresh','sliderThreshVal','€',true)">
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:14px;">
+        <button class="btn-primary" onclick="applyScenario()">Apply Scenario</button>
+        <button class="btn-secondary" onclick="resetScenario()">Reset</button>
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <input type="text" id="presetName" placeholder="Preset name..." style="flex:1;">
+        <button class="btn-secondary" onclick="savePreset()">Save</button>
+      </div>
+      <div class="preset-list" id="presetList"></div>
+    </div>
+
+    <!-- Snapshot Panel -->
+    <div class="panel fade-in">
+      <div class="collapsible-header" onclick="toggleCollapse('snapshotBody', this)">
+        <div class="panel-title" style="margin-bottom:0;"><span class="dot" style="background:var(--yellow);"></span> Last Month Snapshot</div>
+        <span class="chevron">&#9660;</span>
+      </div>
+      <div class="collapsible-body" id="snapshotBody">
+        <div id="snapshotContent" style="font-size:0.8rem; margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <!-- Validation Summary -->
+    <div class="panel fade-in">
+      <div class="panel-title"><span class="dot" style="background:var(--green);"></span> Data Validation</div>
+      <div id="validationSummary" style="font-size:0.8rem; color:var(--text-muted);">No data loaded.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer fade-in">
+  <span>Cash Flow Dashboard &bull; Client-side only &bull; No data leaves your browser</span>
+  <span>Upload a CSV matching the schema to get started. Use <a href="#" onclick="toggleSchema(); return false;">Schema</a> panel for column reference.</span>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+let rawData = [];           // parsed CSV rows (all)
+let filteredData = [];      // after month range filter
+let allMonths = [];
+let hasAgingBuckets = true;
+let fcfComputed = false;    // true if we computed free_cash_flow
+let currentView = 'latest'; // 'latest' or 'ytd'
+let scenarioPresets = [];   // saved presets
+let activeScenario = { rev: 0, delay: 0, exp: 0, thresh: 5000000 };
+let tablePage = 0;
+const TABLE_PAGE_SIZE = 12;
+let tableSortCol = null;
+let tableSortAsc = true;
+
+// Chart instances
+let chartTrend, chartBreakdown, chartWC, chartAging, chartForecast;
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const fmt = (n, decimals=0) => {
+  if (n == null || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return (n < 0 ? '-' : '') + '€' + (abs / 1e6).toFixed(decimals || 1) + 'M';
+  if (abs >= 1e3) return (n < 0 ? '-' : '') + '€' + (abs / 1e3).toFixed(decimals || 0) + 'K';
+  return '€' + n.toFixed(decimals);
+};
+const fmtFull = n => {
+  if (n == null || isNaN(n)) return '—';
+  return '€' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const pct = (a, b) => b !== 0 ? ((a - b) / Math.abs(b) * 100) : 0;
+const arrow = v => v > 0 ? '&#9650;' : v < 0 ? '&#9660;' : '&#9644;';
+const changeClass = v => v > 0 ? 'up' : v < 0 ? 'down' : 'neutral';
+
+/* ============================================================
+   CSV PARSING & VALIDATION
+   ============================================================ */
+const REQUIRED_COLS = [
+  'month','operating_cash_flow','investing_cash_flow','financing_cash_flow',
+  'cash_balance_end','accounts_receivable','accounts_payable','inventory'
+];
+const AGING_COLS = ['ar_0_30','ar_30_60','ar_60_90','ar_90_plus'];
+const ALL_COLS = [...REQUIRED_COLS, 'free_cash_flow', ...AGING_COLS];
+const NUM_COLS = ALL_COLS.filter(c => c !== 'month');
+
+function parseCSV(text) {
+  const result = Papa.parse(text.trim(), { header: true, skipEmptyLines: true, dynamicTyping: true });
+  if (result.errors.length > 0) {
+    showAlert('error', 'CSV parse errors: ' + result.errors.map(e => e.message).join('; '));
+    return null;
+  }
+  const cols = result.meta.fields;
+  // Check required columns
+  const missing = REQUIRED_COLS.filter(c => !cols.includes(c));
+  if (missing.length) {
+    showAlert('error', 'Missing required columns: ' + missing.join(', '));
+    return null;
+  }
+  // Check aging columns
+  hasAgingBuckets = AGING_COLS.every(c => cols.includes(c));
+  if (!hasAgingBuckets) {
+    showAlert('warn', 'Aging bucket columns missing (' + AGING_COLS.filter(c => !cols.includes(c)).join(', ') + '). Per-bucket AR detail unavailable.');
+  }
+  // Check free_cash_flow
+  fcfComputed = !cols.includes('free_cash_flow');
+  // Parse and validate rows
+  let invalidCount = 0;
+  const rows = result.data.map(r => {
+    const row = { ...r };
+    // Ensure numeric
+    NUM_COLS.forEach(c => {
+      if (row[c] !== undefined && row[c] !== null && row[c] !== '') {
+        row[c] = parseFloat(row[c]);
+        if (isNaN(row[c])) { invalidCount++; row[c] = 0; }
+      } else if (c === 'free_cash_flow' && fcfComputed) {
+        row[c] = (row.operating_cash_flow || 0) + (row.investing_cash_flow || 0);
+      } else {
+        row[c] = row[c] || 0;
+      }
+    });
+    if (fcfComputed) {
+      row.free_cash_flow = (row.operating_cash_flow || 0) + (row.investing_cash_flow || 0);
+    }
+    return row;
+  });
+  // Sort by month
+  rows.sort((a, b) => a.month < b.month ? -1 : a.month > b.month ? 1 : 0);
+  // Validation summary
+  let valMsgs = [];
+  valMsgs.push(`${rows.length} rows loaded.`);
+  if (invalidCount > 0) valMsgs.push(`⚠ ${invalidCount} non-numeric values replaced with 0.`);
+  if (fcfComputed) valMsgs.push('ℹ free_cash_flow computed as operating + investing.');
+  // Aging check
+  if (hasAgingBuckets) {
+    rows.forEach(r => {
+      const agingSum = r.ar_0_30 + r.ar_30_60 + r.ar_60_90 + r.ar_90_plus;
+      const diff = Math.abs(agingSum - r.accounts_receivable);
+      if (r.accounts_receivable > 0 && diff / r.accounts_receivable > 0.005) {
+        valMsgs.push(`⚠ ${r.month}: Aging buckets sum (${fmtFull(agingSum)}) differs from AR (${fmtFull(r.accounts_receivable)}) by ${(diff / r.accounts_receivable * 100).toFixed(1)}%.`);
+      }
+    });
+  }
+  $('validationSummary').innerHTML = valMsgs.map(m => `<div style="margin-bottom:3px;">${m}</div>`).join('');
+  return rows;
+}
+
+function showAlert(type, msg) {
+  const bar = $('alertBar');
+  bar.className = 'alert-bar ' + type;
+  bar.innerHTML = msg;
+  bar.style.display = 'block';
+}
+function clearAlert() { $('alertBar').style.display = 'none'; }
+
+/* ============================================================
+   DATA LOADING
+   ============================================================ */
+function loadData(rows) {
+  rawData = rows;
+  allMonths = rows.map(r => r.month);
+  populateMonthSelects();
+  applyFilters();
+}
+
+function populateMonthSelects() {
+  ['monthFrom','monthTo','wcMonthSelect'].forEach(id => {
+    const sel = $(id);
+    sel.innerHTML = '';
+    allMonths.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      sel.appendChild(opt);
+    });
+  });
+  $('monthFrom').value = allMonths[0];
+  $('monthTo').value = allMonths[allMonths.length - 1];
+  $('wcMonthSelect').value = allMonths[allMonths.length - 1];
+}
+
+function applyFilters() {
+  const from = $('monthFrom').value;
+  const to = $('monthTo').value;
+  filteredData = rawData.filter(r => r.month >= from && r.month <= to);
+  if (!filteredData.length) { showAlert('warn', 'No data in selected range.'); return; }
+  clearAlert();
+  renderKPIs();
+  renderCharts();
+  renderSnapshot();
+  renderTable();
+  renderForecast();
+}
+
+$('monthFrom').addEventListener('change', applyFilters);
+$('monthTo').addEventListener('change', applyFilters);
+$('wcMonthSelect').addEventListener('change', () => { renderWCChart(); });
+
+/* ============================================================
+   VIEW TOGGLE
+   ============================================================ */
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.val === v));
+  renderKPIs();
+}
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+function renderKPIs() {
+  if (!filteredData.length) return;
+  const last = filteredData[filteredData.length - 1];
+  const prev = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
+  const isYtd = currentView === 'ytd';
+
+  // Cash Balance
+  $('kpiCashBalVal').textContent = fmt(last.cash_balance_end);
+  if (prev) {
+    const ch = pct(last.cash_balance_end, prev.cash_balance_end);
+    $('kpiCashBalChg').className = 'kpi-change ' + changeClass(ch);
+    $('kpiCashBalChg').innerHTML = `${arrow(ch)} ${ch.toFixed(1)}% vs prior month`;
+  }
+  $('kpiCashBalSub').textContent = fmtFull(last.cash_balance_end);
+
+  // Operating CF
+  const ocfVal = isYtd ? filteredData.reduce((s, r) => s + r.operating_cash_flow, 0) : last.operating_cash_flow;
+  $('kpiOCFVal').textContent = fmt(ocfVal);
+  if (prev && !isYtd) {
+    const ch = pct(last.operating_cash_flow, prev.operating_cash_flow);
+    $('kpiOCFChg').className = 'kpi-change ' + changeClass(ch);
+    $('kpiOCFChg').innerHTML = `${arrow(ch)} ${ch.toFixed(1)}% vs prior month`;
+  } else if (isYtd) {
+    const avg = ocfVal / filteredData.length;
+    $('kpiOCFChg').className = 'kpi-change neutral';
+    $('kpiOCFChg').innerHTML = `YTD total (avg ${fmt(avg)}/mo)`;
+  }
+  $('kpiOCFSub').textContent = isYtd ? `Latest: ${fmtFull(last.operating_cash_flow)}` : fmtFull(last.operating_cash_flow);
+
+  // Free CF
+  const fcfVal = isYtd ? filteredData.reduce((s, r) => s + r.free_cash_flow, 0) : last.free_cash_flow;
+  $('kpiFCFVal').textContent = fmt(fcfVal);
+  if (prev && !isYtd) {
+    const ch = pct(last.free_cash_flow, prev.free_cash_flow);
+    $('kpiFCFChg').className = 'kpi-change ' + changeClass(ch);
+    $('kpiFCFChg').innerHTML = `${arrow(ch)} ${ch.toFixed(1)}% vs prior month`;
+  } else if (isYtd) {
+    const avg = fcfVal / filteredData.length;
+    $('kpiFCFChg').className = 'kpi-change neutral';
+    $('kpiFCFChg').innerHTML = `YTD total (avg ${fmt(avg)}/mo)`;
+  }
+  $('kpiFCFSub').textContent = isYtd ? `Latest: ${fmtFull(last.free_cash_flow)}` : fmtFull(last.free_cash_flow);
+
+  // AR
+  $('kpiARVal').textContent = fmt(last.accounts_receivable);
+  if (prev) {
+    const ch = pct(last.accounts_receivable, prev.accounts_receivable);
+    // For AR, increase is typically negative signal
+    $('kpiARChg').className = 'kpi-change ' + changeClass(-ch);
+    $('kpiARChg').innerHTML = `${arrow(ch)} ${ch.toFixed(1)}% vs prior month`;
+  }
+
+  // AP
+  $('kpiAPVal').textContent = fmt(last.accounts_payable);
+  if (prev) {
+    const ch = pct(last.accounts_payable, prev.accounts_payable);
+    $('kpiAPChg').className = 'kpi-change ' + changeClass(ch);
+    $('kpiAPChg').innerHTML = `${arrow(ch)} ${ch.toFixed(1)}% vs prior month`;
+  }
+
+  // Cash Runway
+  const last6 = filteredData.slice(-6);
+  const avgFcf = last6.reduce((s, r) => s + r.free_cash_flow, 0) / last6.length;
+  if (avgFcf >= 0) {
+    $('kpiRunwayVal').textContent = '∞';
+    $('kpiRunwayChg').className = 'kpi-change up';
+    $('kpiRunwayChg').innerHTML = 'Positive — growing';
+  } else {
+    const months = last.cash_balance_end / Math.abs(avgFcf);
+    $('kpiRunwayVal').textContent = months.toFixed(1) + ' mo';
+    $('kpiRunwayChg').className = 'kpi-change ' + (months > 12 ? 'up' : months > 6 ? 'neutral' : 'down');
+    $('kpiRunwayChg').innerHTML = months > 12 ? 'Healthy' : months > 6 ? 'Monitor' : '⚠ Low runway';
+  }
+  $('kpiRunwayTip').innerHTML = `Avg monthly FCF (${last6.length}mo): ${fmtFull(avgFcf)}<br>Balance: ${fmtFull(last.cash_balance_end)}<br>Runway = Balance / |Avg FCF|`;
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+const chartColors = {
+  operating: '#4fc3f7',
+  investing: '#ab47bc',
+  financing: '#ffd54f',
+  fcf: '#66bb6a',
+  balance: '#7c4dff',
+  ar: '#ff9800',
+  ap: '#ef5350',
+  inventory: '#42a5f5',
+  ar030: '#66bb6a',
+  ar3060: '#ffd54f',
+  ar6090: '#ff9800',
+  ar90: '#ef5350',
+  baseline: '#4fc3f7',
+  scenario: '#ff9800',
+};
+
+function destroyChart(c) { if (c) c.destroy(); }
+
+function renderCharts() {
+  renderTrendChart();
+  renderBreakdownChart();
+  renderWCChart();
+  renderAgingChart();
+}
+
+/* ---------- Trend ---------- */
+function renderTrendChart() {
+  destroyChart(chartTrend);
+  const labels = filteredData.map(r => r.month);
+  chartTrend = new Chart($('chartTrend'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Operating CF', data: filteredData.map(r => r.operating_cash_flow), borderColor: chartColors.operating, backgroundColor: chartColors.operating + '20', tension: 0.3, fill: true, pointRadius: 3 },
+        { label: 'Free CF', data: filteredData.map(r => r.free_cash_flow), borderColor: chartColors.fcf, tension: 0.3, pointRadius: 3, borderDash: [4,2] },
+        { label: 'Cash Balance', data: filteredData.map(r => r.cash_balance_end), borderColor: chartColors.balance, tension: 0.3, pointRadius: 3, yAxisID: 'y1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8892a8', font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#1a2035', titleColor: '#e8ecf4', bodyColor: '#8892a8', borderColor: '#2a3150', borderWidth: 1,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}`,
+            afterBody: (items) => {
+              const idx = items[0].dataIndex;
+              const r = filteredData[idx];
+              return `Investing: ${fmtFull(r.investing_cash_flow)}\nFinancing: ${fmtFull(r.financing_cash_flow)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#5a6480', font: { size: 10 } }, grid: { color: '#1a2035' } },
+        y: { ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { color: '#1a2035' } },
+        y1: { position: 'right', ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+/* ---------- Breakdown ---------- */
+function renderBreakdownChart() {
+  destroyChart(chartBreakdown);
+  const labels = filteredData.map(r => r.month);
+  chartBreakdown = new Chart($('chartBreakdown'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Operating', data: filteredData.map(r => r.operating_cash_flow), backgroundColor: chartColors.operating + 'cc' },
+        { label: 'Investing', data: filteredData.map(r => r.investing_cash_flow), backgroundColor: chartColors.investing + 'cc' },
+        { label: 'Financing', data: filteredData.map(r => r.financing_cash_flow), backgroundColor: chartColors.financing + 'cc' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      plugins: {
+        legend: { labels: { color: '#8892a8', font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#1a2035', titleColor: '#e8ecf4', bodyColor: '#8892a8', borderColor: '#2a3150', borderWidth: 1,
+          callbacks: {
+            label: ctx => {
+              const total = filteredData[ctx.dataIndex].operating_cash_flow + filteredData[ctx.dataIndex].investing_cash_flow + filteredData[ctx.dataIndex].financing_cash_flow;
+              const pctOfTotal = total !== 0 ? (ctx.parsed.y / total * 100).toFixed(1) : 0;
+              return `${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)} (${pctOfTotal}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#5a6480', font: { size: 10 } }, grid: { color: '#1a2035' } },
+        y: { stacked: true, ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { color: '#1a2035' } }
+      }
+    }
+  });
+}
+
+/* ---------- Working Capital ---------- */
+function renderWCChart() {
+  destroyChart(chartWC);
+  const m = $('wcMonthSelect').value;
+  const row = rawData.find(r => r.month === m);
+  if (!row) return;
+  const nwc = row.accounts_receivable - row.accounts_payable - row.inventory;
+  $('nwcDisplay').innerHTML = `Net Working Capital: <span style="color:${nwc >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:700;">${fmtFull(nwc)}</span>`;
+  chartWC = new Chart($('chartWC'), {
+    type: 'bar',
+    data: {
+      labels: ['Receivables', 'Payables', 'Inventory'],
+      datasets: [{
+        data: [row.accounts_receivable, row.accounts_payable, row.inventory],
+        backgroundColor: [chartColors.ar + 'cc', chartColors.ap + 'cc', chartColors.inventory + 'cc'],
+        borderColor: [chartColors.ar, chartColors.ap, chartColors.inventory],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a2035', titleColor: '#e8ecf4', bodyColor: '#8892a8',
+          callbacks: { label: ctx => fmtFull(ctx.parsed.y) }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#8892a8', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { color: '#1a2035' } }
+      }
+    }
+  });
+}
+
+/* ---------- Aging ---------- */
+function renderAgingChart() {
+  destroyChart(chartAging);
+  if (!hasAgingBuckets) {
+    $('agingDetail').textContent = 'Aging bucket data unavailable.';
+    return;
+  }
+  const last = filteredData[filteredData.length - 1];
+  const buckets = [last.ar_0_30, last.ar_30_60, last.ar_60_90, last.ar_90_plus];
+  const totalAging = buckets.reduce((s, v) => s + v, 0);
+  chartAging = new Chart($('chartAging'), {
+    type: 'bar',
+    data: {
+      labels: ['0–30 days', '30–60 days', '60–90 days', '90+ days'],
+      datasets: [{
+        data: buckets,
+        backgroundColor: [chartColors.ar030 + 'cc', chartColors.ar3060 + 'cc', chartColors.ar6090 + 'cc', chartColors.ar90 + 'cc'],
+        borderColor: [chartColors.ar030, chartColors.ar3060, chartColors.ar6090, chartColors.ar90],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a2035', titleColor: '#e8ecf4', bodyColor: '#8892a8',
+          callbacks: {
+            label: ctx => {
+              const p = totalAging > 0 ? (ctx.parsed.x / totalAging * 100).toFixed(1) : 0;
+              return `${fmtFull(ctx.parsed.x)} (${p}% of AR)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { color: '#1a2035' } },
+        y: { ticks: { color: '#8892a8', font: { size: 11 } }, grid: { display: false } }
+      },
+      onClick: (e, elements) => {
+        if (elements.length && elements[0].index === 3) {
+          // 90+ bucket clicked — highlight in table
+          $('tableSearch').value = '90+';
+          renderTable();
+          $('tableWrapper').scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  });
+  // Detail text
+  const pcts = buckets.map(b => totalAging > 0 ? (b / totalAging * 100).toFixed(1) : 0);
+  $('agingDetail').innerHTML = `0–30: ${fmtFull(buckets[0])} (${pcts[0]}%) &bull; 30–60: ${fmtFull(buckets[1])} (${pcts[1]}%) &bull; 60–90: ${fmtFull(buckets[2])} (${pcts[2]}%) &bull; 90+: ${fmtFull(buckets[3])} (${pcts[3]}%)`;
+}
+
+/* ============================================================
+   FORECAST
+   ============================================================ */
+function renderForecast() {
+  computeForecast(activeScenario);
+}
+
+function computeForecast(scenario) {
+  destroyChart(chartForecast);
+  if (!filteredData.length) return;
+  const last = filteredData[filteredData.length - 1];
+  // Compute averages from recent data for projection
+  const recent = filteredData.slice(-6);
+  const avgOp = recent.reduce((s, r) => s + r.operating_cash_flow, 0) / recent.length;
+  const avgInv = recent.reduce((s, r) => s + r.investing_cash_flow, 0) / recent.length;
+  const avgFin = recent.reduce((s, r) => s + r.financing_cash_flow, 0) / recent.length;
+  const avgAR = recent.reduce((s, r) => s + r.accounts_receivable, 0) / recent.length;
+
+  // Generate 6 future months
+  const lastDate = new Date(last.month + '-01');
+  const futureMonths = [];
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(lastDate);
+    d.setMonth(d.getMonth() + i);
+    futureMonths.push(d.toISOString().slice(0, 7));
+  }
+
+  // Baseline projection
+  const baseline = [];
+  let bal = last.cash_balance_end;
+  for (let i = 0; i < 6; i++) {
+    const netCF = avgOp + avgInv + avgFin;
+    bal += netCF;
+    baseline.push({ month: futureMonths[i], cash: bal, op: avgOp, inv: avgInv, fin: avgFin });
+  }
+
+  // Scenario projection
+  const scenarioLine = [];
+  let sBal = last.cash_balance_end;
+  const revFactor = 1 + (scenario.rev / 100);
+  const expFactor = scenario.exp / 100;
+  const delayDrag = avgAR * (scenario.delay / 100); // one-time cash drag
+
+  for (let i = 0; i < 6; i++) {
+    let opAdj = avgOp * revFactor; // revenue growth
+    opAdj = opAdj * (1 - expFactor); // expense increase reduces operating CF
+    const netCF = opAdj + avgInv + avgFin;
+    // Apply payment delay as one-time drag in first month
+    const drag = (i === 0) ? -delayDrag : 0;
+    sBal += netCF + drag;
+    scenarioLine.push({ month: futureMonths[i], cash: sBal, delta: sBal - baseline[i].cash });
+  }
+
+  // Labels: last 3 historical + 6 projected
+  const histLabels = filteredData.slice(-3).map(r => r.month);
+  const histBal = filteredData.slice(-3).map(r => r.cash_balance_end);
+  const allLabels = [...histLabels, ...futureMonths];
+  const baselineAll = [...histBal.map(() => null), ...baseline.map(b => b.cash)];
+  const scenarioAll = [...histBal.map(() => null), ...scenarioLine.map(s => s.cash)];
+  const historicalAll = [...histBal, ...baseline.map(() => null)];
+
+  // Connect historical to projections
+  baselineAll[histLabels.length - 1] = histBal[histBal.length - 1];
+  scenarioAll[histLabels.length - 1] = histBal[histBal.length - 1];
+
+  // Threshold line
+  const threshData = allLabels.map(() => scenario.thresh);
+
+  chartForecast = new Chart($('chartForecast'), {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        { label: 'Historical', data: historicalAll, borderColor: '#8892a8', backgroundColor: '#8892a820', tension: 0.3, fill: true, pointRadius: 3 },
+        { label: 'Baseline', data: baselineAll, borderColor: chartColors.baseline, tension: 0.3, pointRadius: 3, borderDash: [4, 2] },
+        { label: 'Scenario', data: scenarioAll, borderColor: chartColors.scenario, tension: 0.3, pointRadius: 3 },
+        { label: 'Threshold', data: threshData, borderColor: '#ef535066', borderDash: [8, 4], pointRadius: 0, borderWidth: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2.2,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8892a8', font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#1a2035', titleColor: '#e8ecf4', bodyColor: '#8892a8', borderColor: '#2a3150', borderWidth: 1,
+          callbacks: { label: ctx => ctx.parsed.y != null ? `${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}` : '' }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#5a6480', font: { size: 10 } }, grid: { color: '#1a2035' } },
+        y: { ticks: { color: '#5a6480', callback: v => fmt(v) }, grid: { color: '#1a2035' } }
+      }
+    }
+  });
+
+  // Threshold alert
+  const breached = scenarioLine.find(s => s.cash < scenario.thresh);
+  const bAlert = $('thresholdAlert');
+  if (breached) {
+    bAlert.style.display = 'block';
+    bAlert.innerHTML = `⚠ Scenario projects cash below threshold (${fmt(scenario.thresh)}) by ${breached.month}. Projected: ${fmtFull(breached.cash)}.`;
+  } else {
+    bAlert.style.display = 'none';
+  }
+
+  // Store for export
+  window._forecastData = { baseline, scenarioLine, futureMonths };
+}
+
+/* ============================================================
+   SCENARIO CONTROLS
+   ============================================================ */
+function updateSliderLabel(sliderId, labelId, suffix, isCurrency) {
+  const v = $(sliderId).value;
+  $(labelId).textContent = isCurrency ? fmt(parseFloat(v)) : v + suffix;
+}
+
+function applyScenario() {
+  activeScenario = {
+    rev: parseFloat($('sliderRev').value),
+    delay: parseFloat($('sliderDelay').value),
+    exp: parseFloat($('sliderExp').value),
+    thresh: parseFloat($('sliderThresh').value)
+  };
+  renderForecast();
+}
+
+function resetScenario() {
+  $('sliderRev').value = 0; $('sliderRevVal').textContent = '0%';
+  $('sliderDelay').value = 0; $('sliderDelayVal').textContent = '0%';
+  $('sliderExp').value = 0; $('sliderExpVal').textContent = '0%';
+  $('sliderThresh').value = 5000000; $('sliderThreshVal').textContent = fmt(5000000);
+  activeScenario = { rev: 0, delay: 0, exp: 0, thresh: 5000000 };
+  renderForecast();
+}
+
+// Presets
+function savePreset() {
+  const name = $('presetName').value.trim();
+  if (!name) return;
+  scenarioPresets.push({
+    name,
+    rev: parseFloat($('sliderRev').value),
+    delay: parseFloat($('sliderDelay').value),
+    exp: parseFloat($('sliderExp').value),
+    thresh: parseFloat($('sliderThresh').value)
+  });
+  $('presetName').value = '';
+  renderPresets();
+}
+
+function renderPresets() {
+  $('presetList').innerHTML = scenarioPresets.map((p, i) =>
+    `<div class="preset-item" onclick="loadPreset(${i})">
+       <span>${p.name} (Rev:${p.rev}% Del:${p.delay}% Exp:${p.exp}%)</span>
+       <span class="del" onclick="event.stopPropagation(); deletePreset(${i})">×</span>
+     </div>`
+  ).join('');
+}
+
+function loadPreset(i) {
+  const p = scenarioPresets[i];
+  $('sliderRev').value = p.rev; $('sliderRevVal').textContent = p.rev + '%';
+  $('sliderDelay').value = p.delay; $('sliderDelayVal').textContent = p.delay + '%';
+  $('sliderExp').value = p.exp; $('sliderExpVal').textContent = p.exp + '%';
+  $('sliderThresh').value = p.thresh; $('sliderThreshVal').textContent = fmt(p.thresh);
+  applyScenario();
+}
+
+function deletePreset(i) {
+  scenarioPresets.splice(i, 1);
+  renderPresets();
+}
+
+/* ============================================================
+   SNAPSHOT
+   ============================================================ */
+function renderSnapshot() {
+  const last = filteredData[filteredData.length - 1];
+  if (!last) return;
+  let html = `<table style="width:100%; font-family:var(--mono); font-size:0.78rem;">`;
+  const rows = [
+    ['Month', last.month],
+    ['Operating CF', fmtFull(last.operating_cash_flow)],
+    ['Investing CF', fmtFull(last.investing_cash_flow)],
+    ['Financing CF', fmtFull(last.financing_cash_flow)],
+    ['Free CF', fmtFull(last.free_cash_flow)],
+    ['Cash Balance', fmtFull(last.cash_balance_end)],
+    ['AR', fmtFull(last.accounts_receivable)],
+    ['AP', fmtFull(last.accounts_payable)],
+    ['Inventory', fmtFull(last.inventory)],
+  ];
+  if (hasAgingBuckets) {
+    rows.push(['AR 0–30', fmtFull(last.ar_0_30)]);
+    rows.push(['AR 30–60', fmtFull(last.ar_30_60)]);
+    rows.push(['AR 60–90', fmtFull(last.ar_60_90)]);
+    rows.push(['AR 90+', fmtFull(last.ar_90_plus)]);
+  }
+  const nwc = last.accounts_receivable - last.accounts_payable - last.inventory;
+  rows.push(['Net WC', fmtFull(nwc)]);
+  rows.forEach(([k, v]) => {
+    html += `<tr><td style="padding:3px 0; color:var(--text-muted);">${k}</td><td style="padding:3px 0; text-align:right;">${v}</td></tr>`;
+  });
+  html += '</table>';
+  $('snapshotContent').innerHTML = html;
+}
+
+/* ============================================================
+   LEDGER TABLE
+   ============================================================ */
+const TABLE_COLS = ['month','operating_cash_flow','investing_cash_flow','financing_cash_flow','free_cash_flow','cash_balance_end','accounts_receivable','ar_0_30','ar_30_60','ar_60_90','ar_90_plus','accounts_payable','inventory'];
+const TABLE_HEADERS = ['Month','Op CF','Inv CF','Fin CF','Free CF','Balance','AR','AR 0-30','AR 30-60','AR 60-90','AR 90+','AP','Inventory'];
+
+function getTableData() {
+  const search = ($('tableSearch').value || '').toLowerCase().trim();
+  let data = [...filteredData];
+  if (search) {
+    data = data.filter(r => TABLE_COLS.some(c => String(r[c]).toLowerCase().includes(search)));
+  }
+  if (tableSortCol !== null) {
+    const col = TABLE_COLS[tableSortCol];
+    data.sort((a, b) => {
+      const va = a[col], vb = b[col];
+      if (va < vb) return tableSortAsc ? -1 : 1;
+      if (va > vb) return tableSortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+  return data;
+}
+
+function renderTable() {
+  const data = getTableData();
+  const totalPages = Math.ceil(data.length / TABLE_PAGE_SIZE);
+  if (tablePage >= totalPages) tablePage = Math.max(0, totalPages - 1);
+  const pageData = data.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE);
+
+  let html = '<table class="data-table"><thead><tr>';
+  TABLE_HEADERS.forEach((h, i) => {
+    const sortIndicator = tableSortCol === i ? (tableSortAsc ? ' &#9650;' : ' &#9660;') : '';
+    html += `<th onclick="sortTable(${i})">${h}${sortIndicator}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  pageData.forEach(r => {
+    html += '<tr>';
+    TABLE_COLS.forEach((c, i) => {
+      const v = r[c];
+      const isNeg = typeof v === 'number' && v < 0;
+      html += `<td class="${isNeg ? 'negative' : ''}">${i === 0 ? v : fmtFull(v)}</td>`;
+    });
+    html += '</tr>';
+  });
+  if (!pageData.length) html += '<tr><td colspan="13" style="text-align:center; color:var(--text-dim);">No data</td></tr>';
+  html += '</tbody></table>';
+  $('tableWrapper').innerHTML = html;
+
+  // Pagination
+  let pag = '';
+  if (totalPages > 1) {
+    pag += `<button class="btn-secondary" ${tablePage === 0 ? 'disabled' : ''} onclick="tablePage=0;renderTable()">&#171;</button>`;
+    pag += `<button class="btn-secondary" ${tablePage === 0 ? 'disabled' : ''} onclick="tablePage--;renderTable()">&#8249;</button>`;
+    pag += `<span>${tablePage + 1} / ${totalPages}</span>`;
+    pag += `<button class="btn-secondary" ${tablePage >= totalPages - 1 ? 'disabled' : ''} onclick="tablePage++;renderTable()">&#8250;</button>`;
+    pag += `<button class="btn-secondary" ${tablePage >= totalPages - 1 ? 'disabled' : ''} onclick="tablePage=${totalPages - 1};renderTable()">&#187;</button>`;
+  }
+  $('tablePagination').innerHTML = pag;
+}
+
+function sortTable(colIdx) {
+  if (tableSortCol === colIdx) { tableSortAsc = !tableSortAsc; }
+  else { tableSortCol = colIdx; tableSortAsc = true; }
+  renderTable();
+}
+
+/* ============================================================
+   EXPORT FUNCTIONS
+   ============================================================ */
+function exportTableCSV() {
+  const data = getTableData();
+  let csv = TABLE_COLS.join(',') + '\n';
+  data.forEach(r => { csv += TABLE_COLS.map(c => r[c]).join(',') + '\n'; });
+  downloadFile(csv, 'cashflow_ledger.csv', 'text/csv');
+}
+
+function exportForecastCSV() {
+  if (!window._forecastData) return;
+  const { baseline, scenarioLine, futureMonths } = window._forecastData;
+  let csv = 'month,baseline_cash,scenario_cash,delta\n';
+  for (let i = 0; i < 6; i++) {
+    csv += `${futureMonths[i]},${baseline[i].cash.toFixed(2)},${scenarioLine[i].cash.toFixed(2)},${scenarioLine[i].delta.toFixed(2)}\n`;
+  }
+  downloadFile(csv, 'cashflow_forecast.csv', 'text/csv');
+}
+
+function downloadTemplate() {
+  const csv = 'month,operating_cash_flow,investing_cash_flow,financing_cash_flow,free_cash_flow,cash_balance_end,accounts_receivable,ar_0_30,ar_30_60,ar_60_90,ar_90_plus,accounts_payable,inventory\n2025-01,100000,-20000,5000,80000,500000,150000,80000,40000,20000,10000,120000,90000\n';
+  downloadFile(csv, 'cashflow_template.csv', 'text/csv');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
+function toggleSchema() {
+  $('schemaPanel').classList.toggle('hidden');
+}
+
+function resetFilters() {
+  if (!allMonths.length) return;
+  $('monthFrom').value = allMonths[0];
+  $('monthTo').value = allMonths[allMonths.length - 1];
+  $('tableSearch').value = '';
+  tablePage = 0; tableSortCol = null; tableSortAsc = true;
+  setView('latest');
+  resetScenario();
+  applyFilters();
+}
+
+function toggleCollapse(bodyId, header) {
+  const body = $(bodyId);
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    header.classList.remove('collapsed');
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      body.classList.add('collapsed');
+      header.classList.add('collapsed');
+    });
+  }
+}
+
+/* ============================================================
+   FILE UPLOAD
+   ============================================================ */
+$('csvUpload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    clearAlert();
+    const rows = parseCSV(ev.target.result);
+    if (rows && rows.length) loadData(rows);
+  };
+  reader.readAsText(file);
+  // Reset file input so same file can be re-uploaded
+  e.target.value = '';
+});
+
+/* ============================================================
+   EMBEDDED DATA — auto-load from the sample CSV
+   ============================================================ */
+const EMBEDDED_CSV = `month,operating_cash_flow,investing_cash_flow,financing_cash_flow,free_cash_flow,cash_balance_end,accounts_receivable,ar_0_30,ar_30_60,ar_60_90,ar_90_plus,accounts_payable,inventory
+2025-01,716975.17,-51504.34,148628.03,665470.83,8814098.86,2960231.49,1351137.92,722553.2,425949.37,460591.01,2203013.31,1464768.68
+2025-02,707446.74,-393734.55,32681.44,313712.19,9160492.49,2955981.8,1473704.35,621960.56,402449.72,457867.16,2246260.26,1578322.96
+2025-03,924751.42,-256923.33,33784.13,667828.09,9862104.71,3056497.8,1476793.28,762298.2,256902.5,560503.82,1701256.24,1326208.14
+2025-04,404178.15,-212148.86,62429.44,192029.29,10116563.44,3324491.87,1984218.95,672619.01,477197.89,190456.02,2209314.35,1322126.92
+2025-05,592347.91,-155455.84,-3073.1,436892.07,10550382.41,3056210.97,1378158.43,852867.79,274171.97,551012.78,2112878.64,1305017.34
+2025-06,566505.56,-224765.16,117018.81,341740.4,11009141.62,3059803.43,1776575.97,769230.36,335770.64,178226.45,1899252.84,1590392.92
+2025-07,599073.01,-181435.08,31368.78,417637.93,11458148.33,3334911.44,1857886.87,829249.66,321125.65,326649.26,2396898.38,1433081.93
+2025-08,764022.51,-6530.88,308622.06,757491.63,12524262.02,2763845.16,1281436.33,654271.68,331805.09,496332.06,2366706.57,1234958.04
+2025-09,570677.0,-40939.93,164925.31,529737.07,13218924.4,3819249.04,2236633.6,851222.62,362323.35,369069.46,1885243.89,1420560.86
+2025-10,700497.26,-233425.65,176731.02,467071.61,13862727.03,3484193.26,1730166.1,724286.92,453079.37,576660.88,2631378.12,1541920.18
+2025-11,571894.86,-232852.39,31948.98,339042.47,14233718.48,2597885.9,1336642.73,724183.19,251448.42,285611.57,2096350.1,1482223.37
+2025-12,690076.77,-163321.38,-156355.05,526755.39,14604118.82,3531094.58,1655778.87,1005497.44,325824.04,543994.24,2227278.21,1583061.61`;
+
+// Auto-load on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const rows = parseCSV(EMBEDDED_CSV);
+  if (rows && rows.length) loadData(rows);
+  // Set initial threshold label
+  $('sliderThreshVal').textContent = fmt(5000000);
+});
+</script>
+</body>
+</html>

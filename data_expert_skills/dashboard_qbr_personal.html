@@ -1,0 +1,2732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QBR Personal Analysis — DN Smart Management</title>
+<meta name="description" content="Quarterly Business Review personal deep-dive analytics: pipeline, financial, allocation, bonus, and historical quarter comparison per employee">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/design-system.css">
+<style>
+/* ═══════════════════════════════════════════════
+   QBR Personal Analysis — Fortune 500 Theme
+   Accent: Deep Indigo → Violet Gradient
+   ═══════════════════════════════════════════════ */
+
+/* Header override */
+.header {
+  background: linear-gradient(135deg, #312e81 0%, #4f46e5 35%, #7c3aed 70%, #8b5cf6 100%);
+  padding: 28px 36px;
+  min-height: 100px;
+}
+.header h1 {
+  font-size: var(--ds-font-size-2xl);
+  letter-spacing: -0.04em;
+}
+
+/* ─── Employee Selector ─── */
+.employee-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.employee-selector {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 240px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  transition: all 0.2s;
+}
+.employee-selector:hover { background: rgba(255,255,255,0.2); }
+.employee-selector:focus { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 2px; }
+.employee-selector option { background: #1e1b4b; color: #fff; }
+
+/* ─── Profile Hero Card ─── */
+.profile-hero {
+  background: linear-gradient(135deg, rgba(79,70,229,0.12) 0%, rgba(124,58,237,0.06) 100%);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 24px;
+  padding: 36px 40px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.profile-hero::before {
+  content: '';
+  position: absolute; top: -80%; right: -20%; width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
+  animation: pulse-glow 6s infinite ease-in-out;
+  pointer-events: none;
+}
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+.profile-photo-wrap {
+  width: 110px; height: 110px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 3px solid rgba(124,58,237,0.35);
+  box-shadow: 0 8px 32px rgba(124,58,237,0.15);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.profile-photo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profile-avatar {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; font-weight: 800;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: rgba(255,255,255,0.95);
+  letter-spacing: -0.02em;
+}
+.profile-info { flex: 1; position: relative; z-index: 1; }
+.profile-name {
+  font-size: 1.8rem; font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+.profile-role {
+  font-size: 0.88rem; color: var(--ds-text-secondary);
+  font-weight: 500; margin-bottom: 12px;
+}
+.profile-meta { display: flex; gap: 24px; flex-wrap: wrap; }
+.profile-meta-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--ds-text-muted);
+}
+.profile-meta-item span:first-child { font-size: 1rem; }
+.profile-quick-stats {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  position: relative; z-index: 1;
+}
+.profile-quick-stat { text-align: center; min-width: 80px; }
+.profile-quick-stat .stat-value {
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--ds-text);
+}
+.profile-quick-stat .stat-label {
+  font-size: 0.68rem; color: var(--ds-text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ─── Section Titles ─── */
+.section-title {
+  font-size: var(--ds-font-size-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title .section-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, rgba(79,70,229,0.15), rgba(124,58,237,0.1));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* ─── Chart Container Cards (Glassmorphism) ─── */
+.qbr-card {
+  padding: 28px;
+  transition: all var(--ds-transition);
+  position: relative;
+  overflow: hidden;
+}
+.qbr-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ds-shadow-lg);
+  border-color: rgba(99,102,241,0.25);
+}
+.qbr-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #a78bfa);
+  opacity: 0;
+  transition: opacity var(--ds-transition);
+}
+.qbr-card:hover::before { opacity: 1; }
+.qbr-card-title {
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--ds-text-secondary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+.chart-wrap { position: relative; height: 260px; }
+.chart-wrap-sm { position: relative; height: 200px; }
+
+/* ─── KPI Row (Glassmorphism) ─── */
+.qbr-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.qbr-kpi {
+  padding: 22px 24px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.qbr-kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(99,102,241,0.1);
+}
+.qbr-kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+.qbr-kpi.indigo::before { background: linear-gradient(180deg, #4f46e5, #818cf8); }
+.qbr-kpi.violet::before { background: linear-gradient(180deg, #7c3aed, #a78bfa); }
+.qbr-kpi.emerald::before { background: linear-gradient(180deg, #059669, #34d399); }
+.qbr-kpi.amber::before { background: linear-gradient(180deg, #d97706, #fbbf24); }
+.qbr-kpi.rose::before { background: linear-gradient(180deg, #e11d48, #fb7185); }
+.qbr-kpi.cyan::before { background: linear-gradient(180deg, #0891b2, #22d3ee); }
+.qbr-kpi .kpi-icon { font-size: 1.3rem; margin-bottom: 8px; }
+.qbr-kpi .kpi-label {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--ds-text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.qbr-kpi .kpi-value {
+  font-size: 1.5rem; font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.qbr-kpi .kpi-sub {
+  font-size: 0.72rem; margin-top: 4px;
+}
+.kpi-sub.positive { color: #059669; }
+.kpi-sub.negative { color: #e11d48; }
+.kpi-sub.neutral { color: var(--ds-text-muted); }
+
+/* ─── Dashboard Grid Layouts ─── */
+.grid-2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;
+}
+.grid-3 {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 28px;
+}
+.grid-2-1 {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;
+}
+.grid-1-2 {
+  display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 28px;
+}
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+  .profile-hero { flex-direction: column; text-align: center; padding: 28px; }
+  .profile-meta { justify-content: center; }
+  .profile-quick-stats { justify-content: center; }
+}
+
+/* ─── Bonus Gauge ─── */
+.gauge-row {
+  display: flex; gap: 20px; justify-content: space-around; flex-wrap: wrap;
+  margin-top: 16px;
+}
+.gauge-item { text-align: center; flex: 1; min-width: 120px; }
+.gauge-ring {
+  width: 90px; height: 90px; margin: 0 auto 8px;
+  border-radius: 50%;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.gauge-ring::before {
+  content: ''; position: absolute; inset: 4px; border-radius: 50%;
+  background: var(--ds-card);
+}
+.gauge-value {
+  font-size: 1rem; font-weight: 700;
+  position: relative; z-index: 1;
+}
+.gauge-label {
+  font-size: 0.7rem; color: var(--ds-text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* ─── Historical Delta Indicators ─── */
+.delta-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.delta-pill.up { background: rgba(5,150,105,0.12); color: #059669; }
+.delta-pill.down { background: rgba(225,29,72,0.12); color: #e11d48; }
+.delta-pill.flat { background: rgba(100,116,139,0.12); color: #64748b; }
+
+/* ─── Empty State ─── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 400px; text-align: center; padding: 40px;
+}
+.empty-state .empty-icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.4; }
+.empty-state .empty-title {
+  font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;
+  color: var(--ds-text);
+}
+.empty-state .empty-desc {
+  font-size: 0.88rem; color: var(--ds-text-muted); max-width: 400px;
+}
+
+/* ─── Timeline card comparison ─── */
+.timeline-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.timeline-table th {
+  text-align: left; padding: 10px 14px;
+  font-weight: 600; color: var(--ds-text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--ds-border);
+}
+.timeline-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(148,163,184,0.08);
+}
+.timeline-table tbody tr:hover { background: rgba(99,102,241,0.04); }
+
+/* ─── Loading Shimmer ─── */
+.shimmer {
+  background: linear-gradient(90deg, rgba(99,102,241,0.06) 25%, rgba(99,102,241,0.12) 50%, rgba(99,102,241,0.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer-move 1.5s infinite;
+  border-radius: 12px;
+  min-height: 80px;
+}
+@keyframes shimmer-move {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Native Sidebar Layout overrides ─── */
+body.has-sidebar {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background-color: var(--ds-bg) !important;
+}
+
+#ds-nav.native-sidebar {
+  width: 260px !important;
+  flex-shrink: 0 !important;
+  height: 100vh !important;
+  background: #1e1b4b !important; /* deep blue to match header */
+  border-right: 1px solid rgba(255,255,255,0.05) !important;
+  overflow-y: auto !important;
+  display: flex;
+  flex-direction: column;
+}
+
+#ds-nav.native-sidebar .dash-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 32px 16px !important;
+  gap: 8px !important;
+  background: transparent !important;
+  height: 100%;
+}
+
+#ds-nav.native-sidebar .dash-nav-label {
+  font-size: 1.15rem !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  margin-bottom: 24px !important;
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  background: linear-gradient(135deg, #a5b4fc, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-left: 12px;
+}
+
+#ds-nav.native-sidebar .dash-nav-btn {
+  width: 100% !important;
+  text-align: left !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  color: rgba(255,255,255,0.65) !important;
+  background: transparent !important;
+  transition: all 0.2s !important;
+  justify-content: flex-start !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid transparent !important;
+}
+
+#ds-nav.native-sidebar .dash-nav-btn:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: #fff !important;
+}
+
+#ds-nav.native-sidebar .dash-nav-btn.active {
+  background: linear-gradient(135deg, rgba(79,70,229,0.2), rgba(124,58,237,0.2)) !important;
+  border: 1px solid rgba(99,102,241,0.2) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+#ds-nav.native-sidebar .dash-nav-sep { display: none !important; }
+
+#ds-nav.native-sidebar .theme-switcher {
+  margin-top: auto !important; /* Push theme switcher to bottom */
+  width: 100% !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  padding: 24px 16px !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  display: flex !important;
+  gap: 12px !important;
+}
+
+#ds-nav.native-sidebar .theme-label {
+  font-size: 0.72rem !important;
+  color: rgba(255,255,255,0.5) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+#ds-nav.native-sidebar .theme-dot {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.main-content-wrapper {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+}
+
+/* Adjust header to fit inside wrapper nicely */
+.main-content-wrapper .header {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  min-height: fit-content;
+}
+
+/* ═══════════════════════════════════════════════
+   Phase 73 — QBR Feedback Drawer
+   ═══════════════════════════════════════════════ */
+
+/* Feedback toggle button */
+.feedback-toggle-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; padding: 10px 20px; border-radius: 12px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: all 0.25s; font-family: inherit;
+}
+.feedback-toggle-btn:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(79,70,229,0.3);
+}
+.feedback-toggle-btn:disabled {
+  opacity: 0.4; cursor: not-allowed; transform: none;
+}
+
+/* Overlay */
+.fb-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9998; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s;
+}
+.fb-overlay.open { opacity: 1; pointer-events: auto; }
+
+/* Drawer */
+.fb-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 520px; max-width: 90vw;
+  background: linear-gradient(180deg, rgba(15,16,28,0.97) 0%, rgba(20,21,35,0.98) 100%);
+  border-left: 1px solid rgba(124,58,237,0.18);
+  z-index: 9999;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.5);
+}
+.fb-drawer.open { transform: translateX(0); }
+
+/* Drawer header */
+.fb-drawer-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid rgba(148,163,184,0.1);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.fb-drawer-header h2 {
+  font-size: 1.15rem; font-weight: 700; margin: 0;
+  background: linear-gradient(135deg, #a5b4fc, #c4b5fd);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.fb-close-btn {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--ds-text-muted); width: 36px; height: 36px;
+  border-radius: 10px; cursor: pointer; font-size: 1.1rem;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.fb-close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+/* Drawer toolbar */
+.fb-toolbar {
+  padding: 14px 28px;
+  border-bottom: 1px solid rgba(148,163,184,0.08);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.fb-quarter-select {
+  background: rgba(79,70,229,0.12); border: 1px solid rgba(124,58,237,0.3);
+  color: #c4b5fd; padding: 8px 14px; border-radius: 10px;
+  font-size: 0.82rem; font-family: inherit; font-weight: 600;
+  cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23c4b5fd' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px;
+}
+.fb-quarter-select option { background: #1e1b4b; }
+
+.fb-role-tabs {
+  display: flex; gap: 4px; flex: 1;
+}
+.fb-role-tab {
+  padding: 7px 14px; border-radius: 8px;
+  font-size: 0.75rem; font-weight: 600;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--ds-text-muted); cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+}
+.fb-role-tab.active {
+  background: rgba(79,70,229,0.2); border-color: rgba(124,58,237,0.4);
+  color: #c4b5fd;
+}
+.fb-role-tab:hover:not(.active) {
+  background: rgba(255,255,255,0.08);
+}
+
+/* Auto-save indicator */
+.fb-save-indicator {
+  font-size: 0.72rem; color: var(--ds-text-muted);
+  display: flex; align-items: center; gap: 6px;
+  margin-left: auto;
+}
+.fb-save-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #475569;
+}
+.fb-save-dot.saving {
+  background: #f59e0b;
+  animation: fb-pulse 1s ease-in-out infinite;
+}
+.fb-save-dot.saved {
+  background: #22c55e;
+}
+@keyframes fb-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Drawer body */
+.fb-drawer-body {
+  flex: 1; overflow-y: auto; padding: 20px 28px;
+  scrollbar-width: thin; scrollbar-color: rgba(124,58,237,0.3) transparent;
+}
+.fb-drawer-body::-webkit-scrollbar { width: 5px; }
+.fb-drawer-body::-webkit-scrollbar-track { background: transparent; }
+.fb-drawer-body::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 4px; }
+
+/* Section cards */
+.fb-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(148,163,184,0.08);
+  border-radius: 16px; padding: 22px 24px;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+}
+.fb-section:hover { border-color: rgba(124,58,237,0.2); }
+.fb-section.readonly {
+  opacity: 0.7; pointer-events: none;
+}
+.fb-section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.fb-section-icon {
+  font-size: 1.25rem;
+}
+.fb-section-name {
+  font-size: 0.92rem; font-weight: 700;
+  color: var(--ds-text);
+}
+
+/* Star rating */
+.fb-star-row {
+  display: flex; gap: 6px; margin-bottom: 14px;
+}
+.fb-star {
+  width: 32px; height: 32px; cursor: pointer;
+  transition: transform 0.15s;
+}
+.fb-star:hover { transform: scale(1.2); }
+.fb-star svg {
+  width: 100%; height: 100%;
+}
+.fb-star .star-fill { fill: #334155; transition: fill 0.2s; }
+.fb-star.active .star-fill { fill: #f59e0b; }
+.fb-star.active svg { filter: drop-shadow(0 0 4px rgba(245,158,11,0.4)); }
+.fb-section.readonly .fb-star { cursor: default; }
+.fb-section.readonly .fb-star:hover { transform: none; }
+
+/* Text area */
+.fb-textarea {
+  width: 100%; min-height: 90px; max-height: 300px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-radius: 12px; padding: 14px 16px;
+  color: var(--ds-text); font-family: inherit;
+  font-size: 0.84rem; line-height: 1.6;
+  resize: vertical; transition: border-color 0.3s;
+}
+.fb-textarea::placeholder { color: rgba(148,163,184,0.4); }
+.fb-textarea:focus {
+  outline: none;
+  border-color: rgba(124,58,237,0.4);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
+}
+
+/* Read-only viewer */
+.fb-readonly-text {
+  font-size: 0.84rem; color: var(--ds-text-muted);
+  line-height: 1.6; white-space: pre-wrap;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(148,163,184,0.06);
+  border-radius: 10px; min-height: 40px;
+}
+.fb-readonly-text.empty { font-style: italic; color: rgba(148,163,184,0.3); }
+
+/* Status badges */
+.fb-status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.fb-status-badge.draft {
+  background: rgba(245,158,11,0.12); color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.25);
+  box-shadow: 0 0 8px rgba(245,158,11,0.1);
+}
+.fb-status-badge.submitted {
+  background: rgba(34,197,94,0.12); color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.25);
+  box-shadow: 0 0 8px rgba(34,197,94,0.1);
+}
+
+/* Footer / submit */
+.fb-drawer-footer {
+  padding: 18px 28px;
+  border-top: 1px solid rgba(148,163,184,0.1);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.fb-submit-btn {
+  flex: 1; padding: 14px 24px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: none; border-radius: 12px;
+  color: #fff; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; transition: all 0.3s;
+  font-family: inherit;
+}
+.fb-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(79,70,229,0.4);
+}
+.fb-submit-btn:disabled {
+  opacity: 0.4; cursor: not-allowed; transform: none;
+  box-shadow: none;
+}
+
+/* PDF attachment area */
+.fb-attachment-area {
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(148,163,184,0.15);
+  border-radius: 12px; padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.fb-attachment-area label {
+  font-size: 0.8rem; color: var(--ds-text-muted); cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+}
+.fb-attachment-area label:hover { color: #c4b5fd; }
+.fb-attachment-name {
+  font-size: 0.78rem; color: #a5b4fc;
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fb-attachment-remove {
+  background: none; border: none; color: #ef4444;
+  cursor: pointer; font-size: 0.9rem; padding: 4px;
+}
+
+/* History read-only mode */
+.fb-drawer.history-mode .fb-drawer-body {
+  filter: saturate(0.7);
+}
+.fb-drawer.history-mode .fb-section { opacity: 0.85; }
+
+/* Reviewer label */
+.fb-reviewer-label {
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--ds-text-muted); text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.08);
+}
+
+/* ═══════════════════════════════════════════════
+   Phase 74 — Action Items & Meeting Summary
+   ═══════════════════════════════════════════════ */
+
+/* Summary toggle button */
+.summary-toggle-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(59,130,246,0.2));
+  border: 1px solid rgba(6,182,212,0.35);
+  color: #fff; padding: 10px 20px; border-radius: 12px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: all 0.25s; font-family: inherit;
+}
+.summary-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(6,182,212,0.35), rgba(59,130,246,0.35));
+  border-color: rgba(6,182,212,0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(6,182,212,0.3);
+}
+.summary-toggle-btn:disabled {
+  opacity: 0.4; cursor: not-allowed; transform: none;
+}
+
+/* ─── Action Items Section ─── */
+.action-items-section {
+  margin-top: 8px;
+}
+.ai-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+}
+.ai-add-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff; border: none; padding: 10px 20px;
+  border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: all 0.25s; font-family: inherit;
+}
+.ai-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,0.4); }
+.ai-filter-group {
+  display: flex; gap: 6px;
+}
+.ai-filter-btn {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--ds-border);
+  color: var(--ds-text-muted); padding: 6px 14px; border-radius: 8px;
+  font-size: 0.76rem; font-weight: 500; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.ai-filter-btn:hover { border-color: rgba(99,102,241,0.3); color: var(--ds-text); }
+.ai-filter-btn.active {
+  background: rgba(79,70,229,0.15); border-color: rgba(99,102,241,0.4);
+  color: #a5b4fc; font-weight: 600;
+}
+
+/* Action Item Cards */
+.ai-list { display: flex; flex-direction: column; gap: 10px; }
+.ai-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--ds-border); border-radius: 14px;
+  padding: 18px 22px; display: flex; align-items: center; gap: 16px;
+  transition: all 0.25s;
+}
+.ai-card:hover {
+  border-color: rgba(99,102,241,0.25);
+  background: rgba(99,102,241,0.03);
+}
+.ai-card.done { opacity: 0.6; }
+.ai-card.done .ai-title { text-decoration: line-through; }
+
+.ai-status-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  cursor: pointer; transition: transform 0.2s;
+}
+.ai-status-dot:hover { transform: scale(1.3); }
+.ai-status-dot.open { background: #ef4444; }
+.ai-status-dot.in_progress { background: #eab308; }
+.ai-status-dot.done { background: #22c55e; }
+
+.ai-content { flex: 1; min-width: 0; }
+.ai-title { font-weight: 600; font-size: 0.88rem; margin-bottom: 4px; color: var(--ds-text); }
+.ai-meta {
+  font-size: 0.74rem; color: var(--ds-text-muted);
+  display: flex; gap: 14px; flex-wrap: wrap;
+}
+.ai-actions {
+  display: flex; gap: 6px; flex-shrink: 0;
+}
+.ai-act-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 0.85rem; padding: 4px 6px; border-radius: 6px;
+  transition: background 0.2s;
+}
+.ai-act-btn:hover { background: rgba(255,255,255,0.06); }
+
+.ai-empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--ds-text-muted); font-size: 0.88rem;
+}
+.ai-empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.4; }
+
+/* Inline Add/Edit Form */
+.ai-inline-form {
+  background: rgba(79,70,229,0.05); border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 14px; padding: 20px 24px; margin-bottom: 12px;
+  display: none;
+}
+.ai-inline-form.open { display: block; animation: fadeSlideIn 0.3s; }
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ai-form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 12px;
+}
+.ai-form-row.full { grid-template-columns: 1fr; }
+.ai-form-field label {
+  display: block; font-size: 0.72rem; font-weight: 600;
+  color: var(--ds-text-muted); text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 6px;
+}
+.ai-form-field input, .ai-form-field select, .ai-form-field textarea {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--ds-border); border-radius: 8px;
+  padding: 9px 14px; color: var(--ds-text); font-size: 0.84rem;
+  font-family: inherit; transition: border-color 0.2s;
+}
+.ai-form-field input:focus, .ai-form-field select:focus, .ai-form-field textarea:focus {
+  outline: none; border-color: rgba(99,102,241,0.5);
+}
+.ai-form-field textarea { resize: vertical; min-height: 60px; }
+.ai-form-actions {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px;
+}
+.ai-form-save {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff; border: none; padding: 8px 22px; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.ai-form-save:hover { box-shadow: 0 4px 12px rgba(79,70,229,0.4); }
+.ai-form-cancel {
+  background: rgba(255,255,255,0.06); color: var(--ds-text-muted);
+  border: 1px solid var(--ds-border); padding: 8px 18px;
+  border-radius: 8px; font-size: 0.82rem; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.ai-form-cancel:hover { background: rgba(255,255,255,0.1); }
+
+/* ─── Summary Modal ─── */
+.summary-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 10000; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.summary-overlay.open { opacity: 1; pointer-events: auto; }
+
+.summary-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+  width: 800px; max-width: 92vw; max-height: 85vh;
+  background: linear-gradient(180deg, rgba(15,16,28,0.98) 0%, rgba(20,21,35,0.99) 100%);
+  border: 1px solid rgba(6,182,212,0.18); border-radius: 20px;
+  z-index: 10001; display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  opacity: 0; pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.summary-modal.open {
+  opacity: 1; pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sm-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 24px 28px 18px; border-bottom: 1px solid rgba(148,163,184,0.08);
+}
+.sm-header h2 {
+  font-size: 1.15rem; font-weight: 700;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+.sm-close {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(148,163,184,0.1);
+  color: var(--ds-text-muted); width: 32px; height: 32px;
+  border-radius: 8px; cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.sm-close:hover { background: rgba(255,255,255,0.12); color: var(--ds-text); }
+
+.sm-body {
+  flex: 1; overflow-y: auto; padding: 24px 28px;
+}
+
+.sm-section {
+  margin-bottom: 24px;
+}
+.sm-section-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--ds-text-muted);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.sm-kpi-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.sm-kpi {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--ds-border);
+  border-radius: 10px; padding: 14px 16px; text-align: center;
+}
+.sm-kpi-label { font-size: 0.7rem; color: var(--ds-text-muted); margin-bottom: 4px; }
+.sm-kpi-value { font-size: 1.15rem; font-weight: 700; color: var(--ds-text); }
+
+.sm-feedback-list, .sm-action-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sm-fb-item, .sm-ai-item {
+  background: rgba(255,255,255,0.02); border: 1px solid var(--ds-border);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: 0.84rem;
+}
+.sm-fb-section { font-weight: 600; text-transform: capitalize; min-width: 80px; }
+.sm-fb-rating { color: #eab308; }
+.sm-fb-status {
+  font-size: 0.72rem; padding: 3px 10px; border-radius: 20px;
+  font-weight: 600; margin-left: auto;
+}
+.sm-fb-status.submitted { background: rgba(16,185,129,0.15); color: #34d399; }
+.sm-fb-status.draft { background: rgba(234,179,8,0.15); color: #fbbf24; }
+
+.sm-empty {
+  text-align: center; padding: 20px; color: var(--ds-text-muted);
+  font-size: 0.82rem; font-style: italic;
+}
+
+.sm-footer {
+  padding: 18px 28px; border-top: 1px solid rgba(148,163,184,0.08);
+  display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+}
+.sm-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: 10px; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all 0.25s; border: none;
+}
+.sm-btn-print {
+  background: rgba(255,255,255,0.06); color: var(--ds-text);
+  border: 1px solid var(--ds-border);
+}
+.sm-btn-print:hover { background: rgba(255,255,255,0.12); }
+.sm-btn-email {
+  background: linear-gradient(135deg, #059669, #10b981); color: #fff;
+}
+.sm-btn-email:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.4); transform: translateY(-1px); }
+.sm-btn-teams {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
+}
+.sm-btn-teams:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.4); transform: translateY(-1px); }
+.sm-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+/* Toast notifications */
+.sm-toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: rgba(15,16,28,0.95); border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 12px; padding: 14px 24px;
+  color: #fff; font-size: 0.85rem; font-weight: 500;
+  z-index: 10100; opacity: 0; transform: translateY(12px);
+  transition: all 0.3s; pointer-events: none;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.sm-toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.sm-toast.success { border-color: rgba(16,185,129,0.4); }
+.sm-toast.error { border-color: rgba(239,68,68,0.4); }
+
+/* Print-ready styles */
+@media print {
+  body * { visibility: hidden; }
+  .summary-modal, .summary-modal * { visibility: visible; }
+  .summary-modal {
+    position: absolute; top: 0; left: 0; right: 0;
+    transform: none; width: 100%; max-width: 100%; max-height: none;
+    border: none; box-shadow: none; border-radius: 0;
+    background: #fff; color: #000;
+  }
+  .sm-footer, .sm-close { display: none !important; }
+  .sm-kpi-value, .sm-section-title { color: #000 !important; -webkit-text-fill-color: #000 !important; }
+  .sm-header h2 { -webkit-text-fill-color: #1e3a5f !important; }
+}
+</style>
+</head>
+<body class="has-sidebar">
+<script>
+/* Iframe self-detection: hide standalone chrome when embedded in SPA shell */
+if (window.self !== window.top) {
+  document.body.classList.add('embedded-iframe');
+  document.body.classList.remove('has-sidebar');
+  var s = document.createElement('style');
+  s.textContent = 'body.embedded-iframe #ds-nav,' +
+    'body.embedded-iframe > .main-content-wrapper > .header { display:none!important; }' +
+    'body.embedded-iframe > .main-content-wrapper { margin-left:0!important; padding-top:0!important; }' +
+    'body.embedded-iframe { padding-top:0!important; background:transparent!important; }';
+  document.head.appendChild(s);
+}
+</script>
+
+<!-- ═══ Navigation ═══ -->
+<div id="ds-nav" class="native-sidebar"></div>
+
+<div class="main-content-wrapper">
+<!-- ═══ Header ═══ -->
+<header class="header" id="qbrHeader">
+  <div>
+    <h1>📊 QBR Personal Analysis</h1>
+    <p>Quarterly Business Review — Employee Deep-Dive Analytics</p>
+  </div>
+  <div class="employee-selector-wrap">
+    <select id="employeeSelector" class="employee-selector" aria-label="Select Employee">
+      <option value="">— Select Employee —</option>
+    </select>
+    <button id="feedbackToggleBtn" class="feedback-toggle-btn" disabled title="Select an employee first">
+      💬 Feedback
+    </button>
+    <button id="summaryToggleBtn" class="summary-toggle-btn" disabled title="Select an employee first">
+      📋 Summary
+    </button>
+  </div>
+</header>
+
+<!-- ═══ Main Content ═══ -->
+<main class="dashboard-container" style="padding: 28px 32px; max-width: 1440px; margin: 0 auto;">
+
+  <!-- Empty State (shown initially) -->
+  <div id="emptyState" class="empty-state">
+    <div class="empty-icon">👤</div>
+    <div class="empty-title">Select an Employee</div>
+    <div class="empty-desc">Choose an ARQ team member from the dropdown above to view their complete quarterly performance analysis.</div>
+  </div>
+
+  <!-- Profile Content (hidden until employee selected) -->
+  <div id="profileContent" style="display:none;">
+
+    <!-- ─── Profile Hero ─── -->
+    <div class="profile-hero" id="profileHero">
+      <div class="profile-photo-wrap">
+        <div class="profile-avatar" id="profileAvatar">—</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-role" id="profileRole">—</div>
+        <div class="profile-meta">
+          <div class="profile-meta-item"><span>🏢</span> <span id="profileTeam">—</span></div>
+          <div class="profile-meta-item"><span>👔</span> <span id="profileManager">—</span></div>
+        </div>
+      </div>
+      <div class="profile-quick-stats">
+        <div class="profile-quick-stat">
+          <div class="stat-value" id="statTotalOffers">—</div>
+          <div class="stat-label">Total Offers</div>
+        </div>
+        <div class="profile-quick-stat">
+          <div class="stat-value" id="statWinRate" style="color:#059669;">—</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="profile-quick-stat">
+          <div class="stat-value" id="statPipeline" style="color:#4f46e5;">—</div>
+          <div class="stat-label">Pipeline</div>
+        </div>
+        <div class="profile-quick-stat">
+          <div class="stat-value" id="statWonEur" style="color:#7c3aed;">—</div>
+          <div class="stat-label">Won Revenue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── KPI Summary Row ─── -->
+    <div class="qbr-kpi-grid" id="kpiGrid">
+      <div class="qbr-kpi ds-glass-card indigo animate-in" style="animation-delay:0s">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-label">Total Proposals</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+      </div>
+      <div class="qbr-kpi ds-glass-card emerald animate-in" style="animation-delay:0.08s">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-label">Won Deals</div>
+        <div class="kpi-value" id="kpiWon">—</div>
+        <div class="kpi-sub neutral" id="kpiWonSub"></div>
+      </div>
+      <div class="qbr-kpi ds-glass-card rose animate-in" style="animation-delay:0.16s">
+        <div class="kpi-icon">❌</div>
+        <div class="kpi-label">Lost Deals</div>
+        <div class="kpi-value" id="kpiLost">—</div>
+      </div>
+      <div class="qbr-kpi ds-glass-card violet animate-in" style="animation-delay:0.24s">
+        <div class="kpi-icon">⏳</div>
+        <div class="kpi-label">Open Pipeline</div>
+        <div class="kpi-value" id="kpiOpen">—</div>
+      </div>
+      <div class="qbr-kpi ds-glass-card amber animate-in" style="animation-delay:0.32s">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-label">Avg Margin</div>
+        <div class="kpi-value" id="kpiMargin">—</div>
+      </div>
+      <div class="qbr-kpi ds-glass-card cyan animate-in" style="animation-delay:0.40s">
+        <div class="kpi-icon">⏱️</div>
+        <div class="kpi-label">Avg Cycle Days</div>
+        <div class="kpi-value" id="kpiCycle">—</div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Pipeline Deep-Dive ─── -->
+    <div class="section-title">
+      <div class="section-icon">🔄</div>
+      Pipeline Analysis
+    </div>
+    <div class="grid-2">
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Pipeline Stages Breakdown</div>
+        <div class="chart-wrap"><canvas id="chartPipelineBar"></canvas></div>
+      </div>
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Stage Value Distribution</div>
+        <div class="chart-wrap"><canvas id="chartPipelineDoughnut"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Financial Deep-Dive ─── -->
+    <div class="section-title">
+      <div class="section-icon">💰</div>
+      Financial Performance
+    </div>
+    <div class="grid-3">
+      <div class="qbr-card ds-glass-card" style="text-align:center;">
+        <div class="qbr-card-title">Won Revenue</div>
+        <div style="font-size:2.2rem;font-weight:800;margin:20px 0;background:linear-gradient(135deg,#059669,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="bigWonRevenue">—</div>
+        <div style="font-size:0.78rem;color:var(--ds-text-muted);">Total closed-won deal value</div>
+      </div>
+      <div class="qbr-card ds-glass-card" style="text-align:center;">
+        <div class="qbr-card-title">Lost Value</div>
+        <div style="font-size:2.2rem;font-weight:800;margin:20px 0;color:#e11d48;" id="bigLostValue">—</div>
+        <div style="font-size:0.78rem;color:var(--ds-text-muted);">Total lost opportunity value</div>
+      </div>
+      <div class="qbr-card ds-glass-card" style="text-align:center;">
+        <div class="qbr-card-title">Revenue Contribution</div>
+        <div style="font-size:2.2rem;font-weight:800;margin:20px 0;background:linear-gradient(135deg,#4f46e5,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="bigContribution">—</div>
+        <div style="font-size:0.78rem;color:var(--ds-text-muted);">% of total team revenue</div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Market Allocation ─── -->
+    <div class="section-title">
+      <div class="section-icon">🌍</div>
+      Market Allocation
+    </div>
+    <div class="grid-2-1">
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Proposals by Market</div>
+        <div class="chart-wrap"><canvas id="chartMarketBar"></canvas></div>
+      </div>
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Market Mix</div>
+        <div class="chart-wrap"><canvas id="chartMarketDoughnut"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Bonus / Performance ─── -->
+    <div class="section-title">
+      <div class="section-icon">🏆</div>
+      Bonus & Performance Targets
+    </div>
+    <div class="qbr-card ds-glass-card" style="margin-bottom:28px;">
+      <div class="qbr-card-title">Target vs Actual</div>
+      <div class="gauge-row" id="gaugeRow">
+        <div class="gauge-item">
+          <div class="gauge-ring" id="gaugeWinRate" style="background:conic-gradient(#4f46e5 0%, transparent 0%);">
+            <div class="gauge-value" id="gaugeWinRateVal">—</div>
+          </div>
+          <div class="gauge-label">Win Rate</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-ring" id="gaugeMargin" style="background:conic-gradient(#7c3aed 0%, transparent 0%);">
+            <div class="gauge-value" id="gaugeMarginVal">—</div>
+          </div>
+          <div class="gauge-label">Avg Margin</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-ring" id="gaugePipeline" style="background:conic-gradient(#059669 0%, transparent 0%);">
+            <div class="gauge-value" id="gaugePipelineVal">—</div>
+          </div>
+          <div class="gauge-label">Pipeline Value</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-around;margin-top:16px;flex-wrap:wrap;gap:12px;" id="targetLabels">
+        <div style="text-align:center;font-size:0.72rem;color:var(--ds-text-muted);">Target: <span id="targetWR">40%</span></div>
+        <div style="text-align:center;font-size:0.72rem;color:var(--ds-text-muted);">Target: <span id="targetMargin">35%</span></div>
+        <div style="text-align:center;font-size:0.72rem;color:var(--ds-text-muted);">Target: <span id="targetPipeline">€5M</span></div>
+      </div>
+    </div>
+
+    <!-- ─── Section: Historical Timeline ─── -->
+    <div class="section-title">
+      <div class="section-icon">📅</div>
+      Quarterly Timeline
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Win Rate & Offers Trend</div>
+        <div class="chart-wrap"><canvas id="chartTimelineWinRate"></canvas></div>
+      </div>
+      <div class="qbr-card ds-glass-card">
+        <div class="qbr-card-title">Revenue Trend (€)</div>
+        <div class="chart-wrap"><canvas id="chartTimelineRevenue"></canvas></div>
+      </div>
+    </div>
+    <div class="qbr-card ds-glass-card" style="margin-bottom:28px;">
+      <div class="qbr-card-title">Quarter-over-Quarter Comparison</div>
+      <div style="overflow-x:auto;">
+        <table class="timeline-table" id="timelineTable">
+          <thead>
+            <tr>
+              <th>Quarter</th>
+              <th>Offers</th>
+              <th>Won</th>
+              <th>Lost</th>
+              <th>Win Rate</th>
+              <th>Pipeline (€)</th>
+              <th>Won (€)</th>
+              <th>Margin</th>
+              <th>Cycle (d)</th>
+            </tr>
+          </thead>
+          <tbody id="timelineBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── Phase 74: Action Items ─── -->
+    <div class="section-title">
+      <div class="section-icon">✅</div>
+      Action Items
+    </div>
+    <div class="action-items-section">
+      <div class="ai-toolbar">
+        <button class="ai-add-btn" id="aiAddBtn">+ New Action Item</button>
+        <div class="ai-filter-group">
+          <button class="ai-filter-btn active" data-filter="all">All</button>
+          <button class="ai-filter-btn" data-filter="open">🔴 Open</button>
+          <button class="ai-filter-btn" data-filter="in_progress">🟡 In Progress</button>
+          <button class="ai-filter-btn" data-filter="done">🟢 Done</button>
+        </div>
+      </div>
+
+      <!-- Inline Add/Edit Form -->
+      <div class="ai-inline-form" id="aiForm">
+        <div class="ai-form-row">
+          <div class="ai-form-field">
+            <label for="aiTitle">Title</label>
+            <input type="text" id="aiTitle" placeholder="Action item title...">
+          </div>
+          <div class="ai-form-field">
+            <label for="aiOwner">Owner</label>
+            <input type="text" id="aiOwner" placeholder="Responsible person...">
+          </div>
+        </div>
+        <div class="ai-form-row full">
+          <div class="ai-form-field">
+            <label for="aiDesc">Description</label>
+            <textarea id="aiDesc" placeholder="Details..."></textarea>
+          </div>
+        </div>
+        <div class="ai-form-row">
+          <div class="ai-form-field">
+            <label for="aiDueDate">Due Date</label>
+            <input type="date" id="aiDueDate">
+          </div>
+          <div class="ai-form-field">
+            <label for="aiStatus">Status</label>
+            <select id="aiStatus">
+              <option value="open">🔴 Open</option>
+              <option value="in_progress">🟡 In Progress</option>
+              <option value="done">🟢 Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="ai-form-actions">
+          <button class="ai-form-cancel" id="aiCancelBtn">Cancel</button>
+          <button class="ai-form-save" id="aiSaveBtn">Save Action Item</button>
+        </div>
+      </div>
+
+      <div class="ai-list" id="aiList">
+        <div class="ai-empty">
+          <div class="ai-empty-icon">📝</div>
+          No action items yet. Click "+ New Action Item" to create one.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /profileContent -->
+
+</main>
+
+</div><!-- /main-content-wrapper -->
+
+<!-- ═══ Phase 73: Feedback Drawer ═══ -->
+<div class="fb-overlay" id="fbOverlay"></div>
+<div class="fb-drawer" id="fbDrawer">
+  <div class="fb-drawer-header">
+    <h2>💬 QBR Feedback</h2>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="fb-status-badge draft" id="fbStatusBadge">Draft</span>
+      <button class="fb-close-btn" id="fbCloseBtn" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="fb-toolbar">
+    <select class="fb-quarter-select" id="fbQuarterSelect" aria-label="Select Quarter"></select>
+    <div class="fb-role-tabs" id="fbRoleTabs">
+      <button class="fb-role-tab active" data-role="arq_self">Self Eval</button>
+      <button class="fb-role-tab" data-role="arq_upward">Head Eval ↑</button>
+      <button class="fb-role-tab" data-role="head">Head → ARQ</button>
+    </div>
+    <div class="fb-save-indicator" id="fbSaveIndicator">
+      <span class="fb-save-dot" id="fbSaveDot"></span>
+      <span id="fbSaveText"></span>
+    </div>
+  </div>
+  <div class="fb-drawer-body" id="fbDrawerBody">
+    <!-- Dynamic sections rendered by JS -->
+  </div>
+  <div class="fb-drawer-footer" id="fbDrawerFooter">
+    <input type="file" id="fbPdfUpload" accept=".pdf" style="display:none;">
+    <label for="fbPdfUpload" style="cursor:pointer;font-size:0.8rem;color:var(--ds-text-muted);display:flex;align-items:center;gap:6px;" title="Attach PDF">
+      📎 PDF
+    </label>
+    <span id="fbPdfName" style="font-size:0.75rem;color:#a5b4fc;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    <button class="fb-submit-btn" id="fbSubmitBtn">Submit & Lock Feedback</button>
+  </div>
+</div>
+
+<!-- ═══ Phase 74: Summary Modal ═══ -->
+<div class="summary-overlay" id="smOverlay"></div>
+<div class="summary-modal" id="smModal">
+  <div class="sm-header">
+    <h2>📋 QBR Meeting Summary</h2>
+    <button class="sm-close" id="smCloseBtn" title="Close">✕</button>
+  </div>
+  <div class="sm-body" id="smBody">
+    <div class="sm-section">
+      <div class="sm-section-title">📊 KPI Highlights</div>
+      <div class="sm-kpi-grid" id="smKpiGrid"><!-- Dynamic --></div>
+    </div>
+    <div class="sm-section">
+      <div class="sm-section-title">💬 Feedback Summary</div>
+      <div class="sm-feedback-list" id="smFeedbackList"><!-- Dynamic --></div>
+    </div>
+    <div class="sm-section">
+      <div class="sm-section-title">✅ Action Items</div>
+      <div class="sm-action-list" id="smActionList"><!-- Dynamic --></div>
+    </div>
+  </div>
+  <div class="sm-footer">
+    <button class="sm-btn sm-btn-print" id="smPrintBtn">🖨️ Print / PDF</button>
+    <button class="sm-btn sm-btn-email" id="smEmailBtn">📧 Send Email</button>
+    <button class="sm-btn sm-btn-teams" id="smTeamsBtn">💬 Send Teams</button>
+  </div>
+</div>
+<div class="sm-toast" id="smToast"></div>
+
+<!-- ═══ Scripts ═══ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="assets/js/design-system.js"></script>
+<script src="assets/js/navigation.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ─── Config ───
+  var API_BASE = 'http://localhost:8002';
+  var token = null;
+  var charts = {};
+
+  // ─── Auth Helpers ───
+  function getToken() {
+    if (token) return token;
+    token = localStorage.getItem('ds-api-token') || sessionStorage.getItem('ds-api-token');
+    return token;
+  }
+
+  function apiFetch(path, opts) {
+    opts = opts || {};
+    var headers = opts.headers || {};
+    var t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    headers['Content-Type'] = 'application/json';
+    return fetch(API_BASE + path, Object.assign({}, opts, { headers: headers }))
+      .then(function(r) {
+        if (r.status === 401) {
+          console.warn('[QBR] Auth expired, redirecting to admin');
+          window.location.href = 'admin.html';
+          throw new Error('Unauthorized');
+        }
+        if (!r.ok) throw new Error('API error: ' + r.status);
+        return r.json();
+      });
+  }
+
+  // ─── Formatting ───
+  function fmtEur(v) { return v != null ? '€' + Number(v).toLocaleString('en-US', {maximumFractionDigits:0}) : '—'; }
+  function fmtK(v) {
+    if (v == null) return '—';
+    if (v >= 1e6) return '€' + (v/1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return '€' + (v/1e3).toFixed(0) + 'K';
+    return '€' + v.toFixed(0);
+  }
+  function fmtPct(v) { return v != null ? v.toFixed(1) + '%' : '—'; }
+  function initials(name) {
+    if (!name) return '?';
+    var parts = name.split(' ');
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length-1][0] : '')).toUpperCase();
+  }
+
+  // ─── Chart Palette ───
+  var QBR_PALETTE = ['#4f46e5','#7c3aed','#06b6d4','#059669','#d97706','#e11d48','#8b5cf6','#0284c7','#16a34a','#ea580c'];
+
+  // ─── Load Employee List ───
+  function loadEmployees() {
+    apiFetch('/api/qbr/employees')
+      .then(function(employees) {
+        var sel = document.getElementById('employeeSelector');
+        sel.innerHTML = '<option value="">— Select Employee —</option>';
+        employees.forEach(function(emp) {
+          var opt = document.createElement('option');
+          opt.value = emp.jira_login;
+          opt.textContent = emp.full_name + (emp.team ? ' (' + emp.team + ')' : '');
+          sel.appendChild(opt);
+        });
+      })
+      .catch(function(err) {
+        console.warn('[QBR] Could not load employees:', err.message);
+        // Load demo mode
+        loadDemoEmployees();
+      });
+  }
+
+  function loadDemoEmployees() {
+    var demoNames = [
+      {login:'user.demo1', name:'Alexandre Santos', team:'TR-ES'},
+      {login:'user.demo2', name:'Maria Oliveira', team:'TR-PT'},
+      {login:'user.demo3', name:'Ricardo Costa', team:'TR-BR'},
+    ];
+    var sel = document.getElementById('employeeSelector');
+    sel.innerHTML = '<option value="">— Select Employee (Demo) —</option>';
+    demoNames.forEach(function(d) {
+      var opt = document.createElement('option');
+      opt.value = d.login;
+      opt.textContent = d.name + ' (' + d.team + ')';
+      sel.appendChild(opt);
+    });
+  }
+
+  // ─── Load Profile ───
+  function loadProfile(login) {
+    if (!login) {
+      document.getElementById('emptyState').style.display = 'flex';
+      document.getElementById('profileContent').style.display = 'none';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('profileContent').style.display = 'block';
+
+    // Show shimmers
+    document.querySelectorAll('.qbr-kpi .kpi-value').forEach(function(el) { el.textContent = '...'; });
+
+    apiFetch('/api/qbr/profile/' + login)
+      .then(function(p) { renderProfile(p); })
+      .catch(function(err) {
+        console.warn('[QBR] Profile load failed, using demo data:', err.message);
+        renderProfile(generateDemoProfile(login));
+      });
+
+    apiFetch('/api/qbr/timeline/' + login + '?quarters=8')
+      .then(function(t) { renderTimeline(t); })
+      .catch(function(err) {
+        console.warn('[QBR] Timeline load failed, using demo data:', err.message);
+        renderTimeline(generateDemoTimeline(login));
+      });
+  }
+
+  // ─── Render Profile ───
+  function renderProfile(p) {
+    // Hero
+    document.getElementById('profileName').textContent = p.full_name || '—';
+    document.getElementById('profileRole').textContent = (p.role || 'ARQ') + (p.team ? ' · ' + p.team : '');
+    document.getElementById('profileTeam').textContent = p.team || '—';
+    document.getElementById('profileManager').textContent = p.direct_manager || '—';
+
+    // Avatar
+    var avatarEl = document.getElementById('profileAvatar');
+    if (p.photo_path) {
+      avatarEl.innerHTML = '<img class="profile-photo" src="' + p.photo_path + '" alt="' + p.full_name + '">';
+    } else {
+      avatarEl.textContent = initials(p.full_name);
+    }
+
+    // Quick stats
+    document.getElementById('statTotalOffers').textContent = p.total_offers || 0;
+    document.getElementById('statWinRate').textContent = fmtPct(p.win_rate);
+    document.getElementById('statPipeline').textContent = fmtK(p.total_pipeline_eur);
+    document.getElementById('statWonEur').textContent = fmtK(p.won_eur);
+
+    // KPI Grid
+    document.getElementById('kpiTotal').textContent = p.total_offers || 0;
+    document.getElementById('kpiWon').textContent = p.won_offers || 0;
+    document.getElementById('kpiWonSub').textContent = fmtEur(p.won_eur);
+    document.getElementById('kpiLost').textContent = p.lost_offers || 0;
+    document.getElementById('kpiOpen').textContent = p.open_offers || 0;
+    document.getElementById('kpiMargin').textContent = fmtPct(p.avg_margin_pct);
+    document.getElementById('kpiCycle').textContent = (p.avg_cycle_days || 0).toFixed(0) + 'd';
+
+    // Pipeline Charts
+    renderPipelineCharts(p.pipeline_stages || []);
+
+    // Financial
+    document.getElementById('bigWonRevenue').textContent = fmtEur(p.won_eur);
+    document.getElementById('bigLostValue').textContent = fmtEur(p.lost_eur);
+    document.getElementById('bigContribution').textContent = fmtPct(p.revenue_contribution_pct);
+
+    // Market Allocation
+    renderMarketCharts(p.market_allocation || {});
+
+    // Bonus Gauges
+    renderBonusGauges(p);
+  }
+
+  // ─── Pipeline Charts ───
+  function renderPipelineCharts(stages) {
+    destroyChart('chartPipelineBar');
+    destroyChart('chartPipelineDoughnut');
+
+    var labels = stages.map(function(s) { return s.stage; });
+    var counts = stages.map(function(s) { return s.count; });
+    var values = stages.map(function(s) { return s.value_eur; });
+
+    charts.chartPipelineBar = new Chart(document.getElementById('chartPipelineBar'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Count',
+          data: counts,
+          backgroundColor: labels.map(function(_, i) { return QBR_PALETTE[i % QBR_PALETTE.length] + 'cc'; }),
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+
+    charts.chartPipelineDoughnut = new Chart(document.getElementById('chartPipelineDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map(function(_, i) { return QBR_PALETTE[i % QBR_PALETTE.length]; }),
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'right', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) { return ctx.label + ': ' + fmtEur(ctx.raw); }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ─── Market Charts ───
+  function renderMarketCharts(allocation) {
+    destroyChart('chartMarketBar');
+    destroyChart('chartMarketDoughnut');
+
+    var labels = Object.keys(allocation);
+    var values = labels.map(function(k) { return allocation[k]; });
+
+    charts.chartMarketBar = new Chart(document.getElementById('chartMarketBar'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Proposals',
+          data: values,
+          backgroundColor: labels.map(function(_, i) { return QBR_PALETTE[i % QBR_PALETTE.length] + 'bb'; }),
+          borderRadius: 8, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { stepSize: 1 } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+
+    charts.chartMarketDoughnut = new Chart(document.getElementById('chartMarketDoughnut'), {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: labels.map(function(_, i) { return QBR_PALETTE[i % QBR_PALETTE.length]; }),
+          borderWidth: 0, hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '55%',
+        plugins: { legend: { position: 'right', labels: { padding: 10, usePointStyle: true, pointStyle: 'circle' } } }
+      }
+    });
+  }
+
+  // ─── Bonus Gauges ───
+  function renderBonusGauges(p) {
+    var wr = (p.bonus_actual_win_rate || 0) * 100;
+    var wrTarget = (p.bonus_target_win_rate || 0.4) * 100;
+    var wrPct = Math.min(100, (wr / wrTarget) * 100);
+    setGauge('gaugeWinRate', wrPct, '#4f46e5');
+    document.getElementById('gaugeWinRateVal').textContent = wr.toFixed(0) + '%';
+    document.getElementById('targetWR').textContent = wrTarget.toFixed(0) + '%';
+
+    var mg = (p.bonus_actual_margin || 0) * 100;
+    var mgTarget = (p.bonus_target_margin || 0.35) * 100;
+    var mgPct = Math.min(100, (mg / mgTarget) * 100);
+    setGauge('gaugeMargin', mgPct, '#7c3aed');
+    document.getElementById('gaugeMarginVal').textContent = mg.toFixed(1) + '%';
+    document.getElementById('targetMargin').textContent = mgTarget.toFixed(0) + '%';
+
+    var pp = p.bonus_actual_pipeline || 0;
+    var ppTarget = p.bonus_target_pipeline || 5000000;
+    var ppPct = Math.min(100, (pp / ppTarget) * 100);
+    setGauge('gaugePipeline', ppPct, '#059669');
+    document.getElementById('gaugePipelineVal').textContent = fmtK(pp);
+    document.getElementById('targetPipeline').textContent = fmtK(ppTarget);
+  }
+
+  function setGauge(id, pct, color) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var deg = Math.round(pct / 100 * 360);
+    var trackColor = 'rgba(148,163,184,0.1)';
+    el.style.background = 'conic-gradient(' + color + ' 0deg, ' + color + ' ' + deg + 'deg, ' + trackColor + ' ' + deg + 'deg)';
+  }
+
+  // ─── Timeline ───
+  function renderTimeline(data) {
+    var quarters = data.quarters || [];
+    if (quarters.length === 0) return;
+
+    destroyChart('chartTimelineWinRate');
+    destroyChart('chartTimelineRevenue');
+
+    var labels = quarters.map(function(q) { return q.quarter; });
+    var winRates = quarters.map(function(q) { return q.win_rate; });
+    var offers = quarters.map(function(q) { return q.total_offers; });
+    var wonEur = quarters.map(function(q) { return q.won_eur; });
+    var pipEur = quarters.map(function(q) { return q.pipeline_eur; });
+
+    // Win Rate + Offers combo chart
+    charts.chartTimelineWinRate = new Chart(document.getElementById('chartTimelineWinRate'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'line',
+            label: 'Win Rate %',
+            data: winRates,
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124,58,237,0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#7c3aed',
+            yAxisID: 'y1',
+            order: 1,
+          },
+          {
+            label: 'Offers',
+            data: offers,
+            backgroundColor: 'rgba(79,70,229,0.5)',
+            borderRadius: 6,
+            borderSkipped: false,
+            yAxisID: 'y',
+            order: 2,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { usePointStyle: true, padding: 14 } }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Offers' } },
+          y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Win Rate %' } }
+        }
+      }
+    });
+
+    // Revenue trend
+    charts.chartTimelineRevenue = new Chart(document.getElementById('chartTimelineRevenue'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Won Revenue',
+            data: wonEur,
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5,150,105,0.08)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#059669',
+          },
+          {
+            label: 'Pipeline',
+            data: pipEur,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.05)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 4,
+            pointBackgroundColor: '#4f46e5',
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { usePointStyle: true, padding: 14 } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) { return ctx.dataset.label + ': ' + fmtEur(ctx.raw); }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { callback: function(v) { return fmtK(v); } } }
+        }
+      }
+    });
+
+    // Comparison table
+    var tbody = document.getElementById('timelineBody');
+    var rows = '';
+    quarters.forEach(function(q, idx) {
+      var prev = idx > 0 ? quarters[idx - 1] : null;
+      rows += '<tr>'
+        + '<td style="font-weight:600;">' + q.quarter + '</td>'
+        + '<td>' + q.total_offers + ' ' + delta(q.total_offers, prev ? prev.total_offers : null) + '</td>'
+        + '<td>' + q.won_offers + '</td>'
+        + '<td>' + q.lost_offers + '</td>'
+        + '<td>' + fmtPct(q.win_rate) + ' ' + delta(q.win_rate, prev ? prev.win_rate : null) + '</td>'
+        + '<td>' + fmtEur(q.pipeline_eur) + '</td>'
+        + '<td>' + fmtEur(q.won_eur) + '</td>'
+        + '<td>' + fmtPct(q.avg_margin_pct) + '</td>'
+        + '<td>' + (q.avg_cycle_days || 0).toFixed(0) + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = rows;
+  }
+
+  function delta(current, previous) {
+    if (previous == null || previous === 0) return '';
+    var diff = current - previous;
+    if (diff > 0) return '<span class="delta-pill up">▲ +' + diff.toFixed(1) + '</span>';
+    if (diff < 0) return '<span class="delta-pill down">▼ ' + diff.toFixed(1) + '</span>';
+    return '<span class="delta-pill flat">— 0</span>';
+  }
+
+  // ─── Chart Helpers ───
+  function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  }
+
+  // ─── Demo Data Generators ───
+  function generateDemoProfile(login) {
+    var names = {'user.demo1':'Alexandre Santos','user.demo2':'Maria Oliveira','user.demo3':'Ricardo Costa'};
+    var name = names[login] || 'Demo User';
+    var stages = [
+      {stage:'Discovery',count:12,value_eur:890000},
+      {stage:'Proposal',count:8,value_eur:1200000},
+      {stage:'Negotiation',count:5,value_eur:750000},
+      {stage:'Won-End',count:6,value_eur:1800000},
+      {stage:'Lost',count:4,value_eur:320000},
+    ];
+    return {
+      jira_login: login, full_name: name, role: 'ARQ', team: 'TR-ES',
+      direct_manager: 'Carlos Mendes', photo_path: null,
+      total_offers: 35, won_offers: 6, lost_offers: 4, open_offers: 25,
+      win_rate: 60.0, total_pipeline_eur: 4960000, won_eur: 1800000, lost_eur: 320000,
+      avg_margin_pct: 34.5, avg_cycle_days: 87,
+      pipeline_stages: stages,
+      market_allocation: {'Spain': 14, 'Portugal': 8, 'Brazil': 6, 'LATAM': 4, 'Other': 3},
+      revenue_contribution_pct: 18.5,
+      bonus_actual_win_rate: 0.60, bonus_target_win_rate: 0.40,
+      bonus_actual_margin: 0.345, bonus_target_margin: 0.35,
+      bonus_actual_pipeline: 4960000, bonus_target_pipeline: 5000000,
+    };
+  }
+
+  function generateDemoTimeline(login) {
+    var names = {'user.demo1':'Alexandre Santos','user.demo2':'Maria Oliveira','user.demo3':'Ricardo Costa'};
+    return {
+      jira_login: login, full_name: names[login] || 'Demo User',
+      quarters: [
+        {quarter:'Q1-2025',total_offers:8,won_offers:2,lost_offers:1,pipeline_eur:1200000,won_eur:380000,win_rate:66.7,avg_margin_pct:32.0,avg_cycle_days:95},
+        {quarter:'Q2-2025',total_offers:10,won_offers:3,lost_offers:2,pipeline_eur:1500000,won_eur:520000,win_rate:60.0,avg_margin_pct:33.5,avg_cycle_days:88},
+        {quarter:'Q3-2025',total_offers:12,won_offers:4,lost_offers:1,pipeline_eur:1800000,won_eur:680000,win_rate:80.0,avg_margin_pct:35.2,avg_cycle_days:82},
+        {quarter:'Q4-2025',total_offers:14,won_offers:5,lost_offers:2,pipeline_eur:2100000,won_eur:750000,win_rate:71.4,avg_margin_pct:34.8,avg_cycle_days:84},
+        {quarter:'Q1-2026',total_offers:11,won_offers:3,lost_offers:1,pipeline_eur:1600000,won_eur:490000,win_rate:75.0,avg_margin_pct:36.1,avg_cycle_days:79},
+      ]
+    };
+  }
+
+  // ═══════════════════════════════════════════════
+  // Phase 73: QBR Feedback System
+  // ═══════════════════════════════════════════════
+
+  var FEEDBACK_SECTIONS = [
+    { key: 'pipeline',  icon: '🔄', name: 'Pipeline Performance' },
+    { key: 'financial', icon: '💰', name: 'Financial Results' },
+    { key: 'market',    icon: '🌍', name: 'Market & Allocation' },
+    { key: 'bonus',     icon: '🏆', name: 'Bonus & Goals' },
+    { key: 'general',   icon: '📋', name: 'General / Overall' },
+  ];
+
+  var fbState = {
+    employeeLogin: null,
+    reviewerLogin: null,  // current user
+    activeRole: 'arq_self',
+    quarter: null,
+    entries: {},          // section -> {rating, comment}
+    isReadOnly: false,
+    isSubmitted: false,
+    saveTimer: null,
+    lastSaved: null,
+    allData: null,        // full quarter data from API
+  };
+
+  function fbGetCurrentQuarter() {
+    var now = new Date();
+    var q = Math.floor(now.getMonth() / 3) + 1;
+    return now.getFullYear() + '-Q' + q;
+  }
+
+  function fbOpenDrawer() {
+    document.getElementById('fbOverlay').classList.add('open');
+    document.getElementById('fbDrawer').classList.add('open');
+    fbLoadHistory();
+  }
+
+  function fbCloseDrawer() {
+    document.getElementById('fbOverlay').classList.remove('open');
+    document.getElementById('fbDrawer').classList.remove('open');
+  }
+
+  function fbSetRole(role) {
+    fbState.activeRole = role;
+    var tabs = document.querySelectorAll('.fb-role-tab');
+    tabs.forEach(function(t) {
+      t.classList.toggle('active', t.getAttribute('data-role') === role);
+    });
+    fbRenderSections();
+  }
+
+  function fbLoadHistory() {
+    if (!fbState.employeeLogin) return;
+    apiFetch('/api/qbr/feedback/history/' + fbState.employeeLogin)
+      .then(function(data) {
+        var sel = document.getElementById('fbQuarterSelect');
+        sel.innerHTML = '';
+        var currentQ = fbGetCurrentQuarter();
+        var quarters = data.quarters || [];
+        // Ensure current quarter is an option
+        var hasCurrentQ = quarters.some(function(q) { return q.quarter === currentQ; });
+        if (!hasCurrentQ) {
+          quarters.unshift({ quarter: currentQ, has_self_eval: false, has_head_eval: false });
+        }
+        quarters.forEach(function(qi) {
+          var opt = document.createElement('option');
+          opt.value = qi.quarter;
+          var label = qi.quarter;
+          if (qi.has_self_eval && qi.self_eval_status === 'submitted') label += ' ✅';
+          else if (qi.has_self_eval) label += ' 📝';
+          opt.textContent = label;
+          sel.appendChild(opt);
+        });
+        // Default to current quarter
+        sel.value = fbState.quarter || currentQ;
+        fbState.quarter = sel.value;
+        fbLoadQuarterData();
+      })
+      .catch(function(err) {
+        console.warn('[Feedback] History load error:', err);
+        fbLoadFallback();
+      });
+  }
+
+  function fbLoadFallback() {
+    // Fallback: just show current quarter
+    var sel = document.getElementById('fbQuarterSelect');
+    var currentQ = fbGetCurrentQuarter();
+    sel.innerHTML = '<option value="' + currentQ + '">' + currentQ + '</option>';
+    fbState.quarter = currentQ;
+    fbRenderSections();
+  }
+
+  function fbLoadQuarterData() {
+    if (!fbState.employeeLogin || !fbState.quarter) return;
+    apiFetch('/api/qbr/feedback/' + fbState.employeeLogin + '?quarter=' + fbState.quarter)
+      .then(function(data) {
+        fbState.allData = data;
+        fbRenderSections();
+      })
+      .catch(function(err) {
+        console.warn('[Feedback] Quarter data error:', err);
+        fbState.allData = null;
+        fbRenderSections();
+      });
+  }
+
+  function fbRenderSections() {
+    var body = document.getElementById('fbDrawerBody');
+    var role = fbState.activeRole;
+    var isHistory = fbState.quarter !== fbGetCurrentQuarter();
+    var drawer = document.getElementById('fbDrawer');
+    drawer.classList.toggle('history-mode', isHistory);
+
+    // Find entries for current role
+    var roleEntries = {};
+    var isSubmitted = false;
+    if (fbState.allData && fbState.allData.entries) {
+      fbState.allData.entries.forEach(function(e) {
+        if (e.reviewer_role === role && e.reviewer_login === fbState.reviewerLogin) {
+          roleEntries[e.section] = e;
+          if (e.status === 'submitted') isSubmitted = true;
+        }
+      });
+    }
+
+    // Also check if viewing other people's entries (read-only)
+    var otherEntries = {};
+    if (fbState.allData && fbState.allData.entries) {
+      fbState.allData.entries.forEach(function(e) {
+        if (e.reviewer_role === role && e.reviewer_login !== fbState.reviewerLogin) {
+          if (!otherEntries[e.reviewer_login]) otherEntries[e.reviewer_login] = {};
+          otherEntries[e.reviewer_login][e.section] = e;
+        }
+      });
+    }
+
+    fbState.isReadOnly = isHistory || isSubmitted;
+    fbState.isSubmitted = isSubmitted;
+
+    // Update status badge
+    var badge = document.getElementById('fbStatusBadge');
+    if (isSubmitted) {
+      badge.className = 'fb-status-badge submitted';
+      badge.textContent = 'Submitted';
+    } else if (isHistory) {
+      badge.className = 'fb-status-badge submitted';
+      badge.textContent = 'History';
+    } else {
+      badge.className = 'fb-status-badge draft';
+      badge.textContent = 'Draft';
+    }
+
+    // Update submit button
+    var submitBtn = document.getElementById('fbSubmitBtn');
+    submitBtn.disabled = fbState.isReadOnly;
+    submitBtn.textContent = isSubmitted ? '✓ Submitted & Locked' : (isHistory ? 'Read-Only' : 'Submit & Lock Feedback');
+
+    // Build HTML
+    var html = '';
+
+    // If role is 'head' and viewing an ARQ, show the ARQ's self-eval (read-only) first
+    if (role === 'head') {
+      var arqSelfEntries = {};
+      if (fbState.allData && fbState.allData.entries) {
+        fbState.allData.entries.forEach(function(e) {
+          if (e.reviewer_role === 'arq_self' && e.employee_login === fbState.employeeLogin) {
+            arqSelfEntries[e.section] = e;
+          }
+        });
+      }
+      if (Object.keys(arqSelfEntries).length > 0) {
+        html += '<div class="fb-reviewer-label">ARQ Self-Evaluation (Read-Only)</div>';
+        FEEDBACK_SECTIONS.forEach(function(sec) {
+          var entry = arqSelfEntries[sec.key];
+          html += fbRenderReadOnlySection(sec, entry);
+        });
+        html += '<div style="height:24px;border-bottom:2px solid rgba(124,58,237,0.15);margin-bottom:20px;"></div>';
+        html += '<div class="fb-reviewer-label">Your Evaluation of this ARQ</div>';
+      }
+    }
+
+    // Show other reviewers' entries in read-only (for upward eval, show all)
+    var otherKeys = Object.keys(otherEntries);
+    if (otherKeys.length > 0 && role === 'arq_upward') {
+      otherKeys.forEach(function(reviewer) {
+        html += '<div class="fb-reviewer-label">Feedback by: ' + reviewer + ' (Read-Only)</div>';
+        FEEDBACK_SECTIONS.forEach(function(sec) {
+          var entry = otherEntries[reviewer][sec.key];
+          html += fbRenderReadOnlySection(sec, entry);
+        });
+        html += '<div style="height:16px;"></div>';
+      });
+      html += '<div style="height:24px;border-bottom:2px solid rgba(124,58,237,0.15);margin-bottom:20px;"></div>';
+      html += '<div class="fb-reviewer-label">Your Feedback</div>';
+    }
+
+    // Render editable (or read-only if submitted/history) sections for current user
+    FEEDBACK_SECTIONS.forEach(function(sec) {
+      var entry = roleEntries[sec.key];
+      if (fbState.isReadOnly) {
+        html += fbRenderReadOnlySection(sec, entry);
+      } else {
+        html += fbRenderEditableSection(sec, entry);
+      }
+    });
+
+    body.innerHTML = html;
+
+    // Bind star click events if editable
+    if (!fbState.isReadOnly) {
+      body.querySelectorAll('.fb-star').forEach(function(star) {
+        star.addEventListener('click', function() {
+          var section = this.getAttribute('data-section');
+          var val = parseInt(this.getAttribute('data-value'));
+          fbSetStarRating(section, val);
+        });
+      });
+      body.querySelectorAll('.fb-textarea').forEach(function(ta) {
+        ta.addEventListener('input', function() {
+          var section = this.getAttribute('data-section');
+          fbDebounceSave(section);
+        });
+      });
+    }
+  }
+
+  function fbRenderEditableSection(sec, entry) {
+    var rating = (entry && entry.rating) || 0;
+    var comment = (entry && entry.comment) || '';
+    var stars = '';
+    for (var i = 1; i <= 5; i++) {
+      var active = i <= rating ? ' active' : '';
+      stars += '<span class="fb-star' + active + '" data-section="' + sec.key + '" data-value="' + i + '">' +
+        '<svg viewBox="0 0 24 24"><path class="star-fill" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>';
+    }
+    return '<div class="fb-section" id="fbSection_' + sec.key + '">' +
+      '<div class="fb-section-header">' +
+        '<span class="fb-section-icon">' + sec.icon + '</span>' +
+        '<span class="fb-section-name">' + sec.name + '</span>' +
+      '</div>' +
+      '<div class="fb-star-row">' + stars + '</div>' +
+      '<textarea class="fb-textarea" data-section="' + sec.key + '" placeholder="Add your observations, goals, or improvement notes...">' + fbEsc(comment) + '</textarea>' +
+    '</div>';
+  }
+
+  function fbRenderReadOnlySection(sec, entry) {
+    var rating = (entry && entry.rating) || 0;
+    var comment = (entry && entry.comment) || '';
+    var stars = '';
+    for (var i = 1; i <= 5; i++) {
+      var active = i <= rating ? ' active' : '';
+      stars += '<span class="fb-star' + active + '">' +
+        '<svg viewBox="0 0 24 24"><path class="star-fill" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>';
+    }
+    var textClass = comment ? 'fb-readonly-text' : 'fb-readonly-text empty';
+    var textContent = comment || 'No feedback provided.';
+    return '<div class="fb-section readonly">' +
+      '<div class="fb-section-header">' +
+        '<span class="fb-section-icon">' + sec.icon + '</span>' +
+        '<span class="fb-section-name">' + sec.name + '</span>' +
+      '</div>' +
+      '<div class="fb-star-row">' + stars + '</div>' +
+      '<div class="' + textClass + '">' + fbEsc(textContent) + '</div>' +
+    '</div>';
+  }
+
+  function fbEsc(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function fbSetStarRating(section, value) {
+    // Update UI
+    var sec = document.getElementById('fbSection_' + section);
+    if (!sec) return;
+    sec.querySelectorAll('.fb-star').forEach(function(star) {
+      var v = parseInt(star.getAttribute('data-value'));
+      star.classList.toggle('active', v <= value);
+    });
+    // Auto-save
+    fbAutoSave(section);
+  }
+
+  function fbDebounceSave(section) {
+    if (fbState.saveTimer) clearTimeout(fbState.saveTimer);
+    fbState.saveTimer = setTimeout(function() {
+      fbAutoSave(section);
+    }, 2000);
+  }
+
+  function fbAutoSave(section) {
+    if (fbState.isReadOnly || !fbState.employeeLogin) return;
+
+    var secEl = document.getElementById('fbSection_' + section);
+    if (!secEl) return;
+
+    var activeStars = secEl.querySelectorAll('.fb-star.active');
+    var rating = activeStars.length || null;
+    var textarea = secEl.querySelector('.fb-textarea');
+    var comment = textarea ? textarea.value : null;
+
+    // Show saving indicator
+    fbSetSaveStatus('saving');
+
+    var payload = {
+      employee_login: fbState.employeeLogin,
+      reviewer_login: fbState.reviewerLogin,
+      reviewer_role: fbState.activeRole,
+      quarter: fbState.quarter,
+      section: section,
+      rating: rating,
+      comment: comment,
+    };
+
+    apiFetch('/api/qbr/feedback', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    .then(function() {
+      fbSetSaveStatus('saved');
+    })
+    .catch(function(err) {
+      console.warn('[Feedback] Save error:', err);
+      fbSetSaveStatus('error');
+    });
+  }
+
+  function fbSetSaveStatus(status) {
+    var dot = document.getElementById('fbSaveDot');
+    var text = document.getElementById('fbSaveText');
+    dot.className = 'fb-save-dot';
+    if (status === 'saving') {
+      dot.classList.add('saving');
+      text.textContent = 'Saving...';
+    } else if (status === 'saved') {
+      dot.classList.add('saved');
+      var now = new Date();
+      text.textContent = 'Saved ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    } else if (status === 'error') {
+      dot.style.background = '#ef4444';
+      text.textContent = 'Save failed';
+    }
+  }
+
+  function fbSubmit() {
+    if (fbState.isReadOnly || !fbState.employeeLogin) return;
+    if (!confirm('Submit feedback? This will permanently lock your evaluation for ' + fbState.quarter + '. This cannot be undone.')) return;
+
+    apiFetch('/api/qbr/feedback/submit/' + fbState.employeeLogin +
+      '?reviewer_login=' + encodeURIComponent(fbState.reviewerLogin) +
+      '&quarter=' + encodeURIComponent(fbState.quarter), {
+      method: 'PUT',
+    })
+    .then(function(res) {
+      fbState.isSubmitted = true;
+      fbState.isReadOnly = true;
+      fbLoadQuarterData();
+    })
+    .catch(function(err) {
+      console.error('[Feedback] Submit error:', err);
+      alert('Failed to submit. Please try again.');
+    });
+  }
+
+  function fbUploadPdf(file) {
+    if (!file || !fbState.employeeLogin) return;
+    var formData = new FormData();
+    formData.append('file', file);
+
+    var url = API_BASE + '/api/qbr/feedback/attachment' +
+      '?employee_login=' + encodeURIComponent(fbState.employeeLogin) +
+      '&reviewer_login=' + encodeURIComponent(fbState.reviewerLogin) +
+      '&quarter=' + encodeURIComponent(fbState.quarter);
+
+    var t = getToken();
+    var headers = {};
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+
+    fetch(url, { method: 'POST', headers: headers, body: formData })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('fbPdfName').textContent = '📄 ' + data.file_name;
+      })
+      .catch(function(err) {
+        console.error('[Feedback] PDF upload error:', err);
+      });
+  }
+
+  // ═══════════════════════════════════════════════
+  // Phase 74 — Action Items Module
+  // ═══════════════════════════════════════════════
+
+  var aiState = {
+    items: [],
+    filter: 'all',
+    editingId: null,
+    employeeLogin: null,
+  };
+
+  function aiGetCurrentQuarter() {
+    var now = new Date();
+    var q = Math.ceil((now.getMonth() + 1) / 3);
+    return 'Q' + q;
+  }
+
+  function aiGetCurrentYear() { return new Date().getFullYear(); }
+
+  function aiLoadItems() {
+    if (!aiState.employeeLogin) return;
+    var q = aiGetCurrentQuarter();
+    var y = aiGetCurrentYear();
+    apiFetch('/api/qbr/action-items/' + encodeURIComponent(aiState.employeeLogin) +
+      '?quarter=' + q + '&year=' + y)
+      .then(function(items) {
+        aiState.items = items;
+        aiRenderList();
+      })
+      .catch(function(err) {
+        console.warn('[ActionItems] Load error:', err.message);
+        aiState.items = [];
+        aiRenderList();
+      });
+  }
+
+  function aiRenderList() {
+    var list = document.getElementById('aiList');
+    var filtered = aiState.items;
+    if (aiState.filter !== 'all') {
+      filtered = filtered.filter(function(i) { return i.status === aiState.filter; });
+    }
+
+    if (filtered.length === 0) {
+      var filterMsg = aiState.filter !== 'all' ? ' with status "' + aiState.filter.replace('_', ' ') + '"' : '';
+      list.innerHTML = '<div class="ai-empty"><div class="ai-empty-icon">📝</div>No action items' + filterMsg + '. Click "+ New Action Item" to create one.</div>';
+      return;
+    }
+
+    var html = '';
+    filtered.forEach(function(item) {
+      var nextStatus = item.status === 'open' ? 'in_progress' : (item.status === 'in_progress' ? 'done' : 'open');
+      var dueDateStr = item.due_date ? '📅 ' + item.due_date : '';
+      html += '<div class="ai-card ' + item.status + '" data-id="' + item.id + '">' +
+        '<div class="ai-status-dot ' + item.status + '" title="Click to cycle status → ' + nextStatus.replace('_', ' ') + '" data-id="' + item.id + '" data-next="' + nextStatus + '"></div>' +
+        '<div class="ai-content">' +
+          '<div class="ai-title">' + escHtml(item.title) + '</div>' +
+          '<div class="ai-meta">' +
+            (item.owner ? '<span>👤 ' + escHtml(item.owner) + '</span>' : '') +
+            (dueDateStr ? '<span>' + dueDateStr + '</span>' : '') +
+            '<span class="ai-status-label">' + aiStatusLabel(item.status) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ai-actions">' +
+          '<button class="ai-act-btn" title="Edit" data-action="edit" data-id="' + item.id + '">✏️</button>' +
+          '<button class="ai-act-btn" title="Delete" data-action="delete" data-id="' + item.id + '">🗑️</button>' +
+        '</div>' +
+      '</div>';
+    });
+    list.innerHTML = html;
+
+    // Bind status dot clicks
+    list.querySelectorAll('.ai-status-dot').forEach(function(dot) {
+      dot.addEventListener('click', function() {
+        aiCycleStatus(parseInt(this.getAttribute('data-id')), this.getAttribute('data-next'));
+      });
+    });
+
+    // Bind action buttons
+    list.querySelectorAll('.ai-act-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var action = this.getAttribute('data-action');
+        var id = parseInt(this.getAttribute('data-id'));
+        if (action === 'edit') aiEditItem(id);
+        if (action === 'delete') aiDeleteItem(id);
+      });
+    });
+  }
+
+  function escHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function aiStatusLabel(s) {
+    return {open: '🔴 Open', in_progress: '🟡 In Progress', done: '🟢 Done'}[s] || s;
+  }
+
+  function aiShowForm(editItem) {
+    aiState.editingId = editItem ? editItem.id : null;
+    document.getElementById('aiTitle').value = editItem ? editItem.title : '';
+    document.getElementById('aiOwner').value = editItem ? editItem.owner : '';
+    document.getElementById('aiDesc').value = editItem ? editItem.description : '';
+    document.getElementById('aiDueDate').value = editItem && editItem.due_date ? editItem.due_date : '';
+    document.getElementById('aiStatus').value = editItem ? editItem.status : 'open';
+    document.getElementById('aiForm').classList.add('open');
+    document.getElementById('aiTitle').focus();
+  }
+
+  function aiHideForm() {
+    aiState.editingId = null;
+    document.getElementById('aiForm').classList.remove('open');
+  }
+
+  function aiSaveItem() {
+    var title = document.getElementById('aiTitle').value.trim();
+    if (!title) { alert('Title is required'); return; }
+
+    var payload = {
+      title: title,
+      owner: document.getElementById('aiOwner').value.trim(),
+      description: document.getElementById('aiDesc').value.trim(),
+      due_date: document.getElementById('aiDueDate').value || null,
+      status: document.getElementById('aiStatus').value,
+    };
+
+    if (aiState.editingId) {
+      // Update existing
+      apiFetch('/api/qbr/action-items/' + aiState.editingId, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }).then(function() {
+        aiHideForm();
+        aiLoadItems();
+        smToast('✅ Action item updated', 'success');
+      }).catch(function(err) { smToast('❌ Update failed: ' + err.message, 'error'); });
+    } else {
+      // Create new
+      payload.employee_login = aiState.employeeLogin;
+      payload.quarter = aiGetCurrentQuarter();
+      payload.year = aiGetCurrentYear();
+      payload.created_by = fbState.reviewerLogin || 'admin';
+
+      apiFetch('/api/qbr/action-items', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }).then(function() {
+        aiHideForm();
+        aiLoadItems();
+        smToast('✅ Action item created', 'success');
+      }).catch(function(err) { smToast('❌ Create failed: ' + err.message, 'error'); });
+    }
+  }
+
+  function aiEditItem(id) {
+    var item = aiState.items.find(function(i) { return i.id === id; });
+    if (item) aiShowForm(item);
+  }
+
+  function aiDeleteItem(id) {
+    if (!confirm('Delete this action item? This cannot be undone.')) return;
+    apiFetch('/api/qbr/action-items/' + id, { method: 'DELETE' })
+      .then(function() {
+        aiLoadItems();
+        smToast('🗑️ Action item deleted', 'success');
+      })
+      .catch(function(err) { smToast('❌ Delete failed: ' + err.message, 'error'); });
+  }
+
+  function aiCycleStatus(id, nextStatus) {
+    apiFetch('/api/qbr/action-items/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ status: nextStatus }),
+    }).then(function() {
+      aiLoadItems();
+    }).catch(function(err) { console.warn('[ActionItems] Cycle error:', err); });
+  }
+
+  function aiSetFilter(f) {
+    aiState.filter = f;
+    document.querySelectorAll('.ai-filter-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-filter') === f);
+    });
+    aiRenderList();
+  }
+
+
+  // ═══════════════════════════════════════════════
+  // Phase 74 — Meeting Summary Module
+  // ═══════════════════════════════════════════════
+
+  var smData = null; // Cached summary data
+
+  function smOpenModal() {
+    if (!aiState.employeeLogin) return;
+    document.getElementById('smOverlay').classList.add('open');
+    document.getElementById('smModal').classList.add('open');
+    smGenerate();
+  }
+
+  function smCloseModal() {
+    document.getElementById('smOverlay').classList.remove('open');
+    document.getElementById('smModal').classList.remove('open');
+  }
+
+  function smGenerate() {
+    var q = aiGetCurrentQuarter();
+    var y = aiGetCurrentYear();
+    apiFetch('/api/qbr/summary/generate/' + encodeURIComponent(aiState.employeeLogin) +
+      '?quarter=' + q + '&year=' + y, { method: 'POST' })
+      .then(function(data) {
+        smData = data;
+        smRenderModal(data);
+      })
+      .catch(function(err) {
+        console.warn('[Summary] Generate error:', err.message);
+        // Render from local state as fallback
+        smRenderFromLocal();
+      });
+  }
+
+  function smRenderFromLocal() {
+    // Build from locally available data
+    var sel = document.getElementById('employeeSelector');
+    var name = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : aiState.employeeLogin;
+    smData = {
+      employee_login: aiState.employeeLogin,
+      employee_name: name,
+      quarter: aiGetCurrentQuarter(),
+      year: aiGetCurrentYear(),
+      kpi_summary: {
+        total_offers: document.getElementById('kpiTotal') ? document.getElementById('kpiTotal').textContent : '—',
+        win_rate: document.getElementById('kpiMargin') ? document.getElementById('statWinRate').textContent : '—',
+        pipeline_value_eur: document.getElementById('statPipeline') ? document.getElementById('statPipeline').textContent : '—',
+        won_revenue: document.getElementById('bigWonRevenue') ? document.getElementById('bigWonRevenue').textContent : '—',
+      },
+      feedback_summary: [],
+      action_items: aiState.items.map(function(i) {
+        return { title: i.title, owner: i.owner, status: i.status, due_date: i.due_date };
+      }),
+      generated_at: new Date().toISOString(),
+    };
+    smRenderModal(smData);
+  }
+
+  function smRenderModal(data) {
+    // KPIs
+    var kpiGrid = document.getElementById('smKpiGrid');
+    if (data.kpi_summary && typeof data.kpi_summary === 'object') {
+      var kpiHtml = '';
+      var kpiLabels = {
+        total_offers: 'Total Offers', won_offers: 'Won Deals',
+        win_rate: 'Win Rate', pipeline_value_eur: 'Pipeline (€)',
+        avg_cycle_days: 'Avg Cycle', won_revenue: 'Won Revenue',
+      };
+      Object.keys(data.kpi_summary).forEach(function(key) {
+        var label = kpiLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        kpiHtml += '<div class="sm-kpi"><div class="sm-kpi-label">' + label + '</div><div class="sm-kpi-value">' + data.kpi_summary[key] + '</div></div>';
+      });
+      kpiGrid.innerHTML = kpiHtml || '<div class="sm-empty">No KPI data</div>';
+    } else {
+      kpiGrid.innerHTML = '<div class="sm-empty">No KPI data available</div>';
+    }
+
+    // Feedback
+    var fbList = document.getElementById('smFeedbackList');
+    if (data.feedback_summary && data.feedback_summary.length > 0) {
+      var fbHtml = '';
+      data.feedback_summary.forEach(function(fb) {
+        var stars = fb.rating ? '⭐'.repeat(fb.rating) : '—';
+        var statusClass = fb.status === 'submitted' ? 'submitted' : 'draft';
+        fbHtml += '<div class="sm-fb-item">' +
+          '<span class="sm-fb-section">' + (fb.section || '') + '</span>' +
+          '<span class="sm-fb-rating">' + stars + '</span>' +
+          (fb.comment ? '<span style="flex:1;font-size:0.78rem;color:var(--ds-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(fb.comment).substring(0, 60) + '</span>' : '') +
+          '<span class="sm-fb-status ' + statusClass + '">' + (fb.status || 'draft') + '</span>' +
+        '</div>';
+      });
+      fbList.innerHTML = fbHtml;
+    } else {
+      fbList.innerHTML = '<div class="sm-empty">No feedback data for this quarter</div>';
+    }
+
+    // Action Items
+    var aiList = document.getElementById('smActionList');
+    if (data.action_items && data.action_items.length > 0) {
+      var aiHtml = '';
+      data.action_items.forEach(function(item) {
+        var emoji = {open: '🔴', in_progress: '🟡', done: '🟢'}[item.status] || '⚪';
+        aiHtml += '<div class="sm-ai-item">' +
+          '<span>' + emoji + '</span>' +
+          '<span style="font-weight:600;flex:1;">' + escHtml(item.title) + '</span>' +
+          '<span style="font-size:0.78rem;color:var(--ds-text-muted);">' + escHtml(item.owner || 'Unassigned') + '</span>' +
+          (item.due_date ? '<span style="font-size:0.72rem;color:var(--ds-text-muted);">📅 ' + item.due_date + '</span>' : '') +
+        '</div>';
+      });
+      aiList.innerHTML = aiHtml;
+    } else {
+      aiList.innerHTML = '<div class="sm-empty">No action items for this quarter</div>';
+    }
+  }
+
+  function smToast(msg, type) {
+    var el = document.getElementById('smToast');
+    el.textContent = msg;
+    el.className = 'sm-toast show ' + (type || '');
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function() { el.classList.remove('show'); }, 3500);
+  }
+
+  function smPrint() {
+    window.print();
+  }
+
+  function smSendEmail() {
+    if (!smData) { smToast('❌ Generate summary first', 'error'); return; }
+    var email = prompt('Enter recipient email(s), separated by commas:');
+    if (!email) return;
+    var recipients = email.split(',').map(function(e) { return e.trim(); }).filter(Boolean);
+    if (recipients.length === 0) return;
+
+    var btn = document.getElementById('smEmailBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending...';
+
+    apiFetch('/api/qbr/summary/send-email', {
+      method: 'POST',
+      body: JSON.stringify({
+        employee_login: aiState.employeeLogin,
+        quarter: aiGetCurrentQuarter(),
+        year: aiGetCurrentYear(),
+        recipients: recipients,
+        message: '',
+      }),
+    })
+    .then(function(res) {
+      smToast(res.success ? '✅ ' + res.message : '⚠️ ' + res.message, res.success ? 'success' : 'error');
+    })
+    .catch(function(err) {
+      smToast('❌ Email failed: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = '📧 Send Email';
+    });
+  }
+
+  function smSendTeams() {
+    if (!smData) { smToast('❌ Generate summary first', 'error'); return; }
+
+    var btn = document.getElementById('smTeamsBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Sending...';
+
+    apiFetch('/api/qbr/summary/send-teams', {
+      method: 'POST',
+      body: JSON.stringify({
+        employee_login: aiState.employeeLogin,
+        quarter: aiGetCurrentQuarter(),
+        year: aiGetCurrentYear(),
+        recipients: [],
+        message: '',
+      }),
+    })
+    .then(function(res) {
+      smToast(res.success ? '✅ ' + res.message : '⚠️ ' + res.message, res.success ? 'success' : 'error');
+    })
+    .catch(function(err) {
+      smToast('❌ Teams send failed: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = '💬 Send Teams';
+    });
+  }
+
+
+  // ─── Init ───
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.DS && window.DS.theme) window.DS.theme.init();
+    if (window.DS && window.DS.nav) window.DS.nav.mount('ds-nav');
+
+    loadEmployees();
+
+    // Derive reviewer login from token (parse JWT)
+    var t = getToken();
+    if (t) {
+      try {
+        var payload = JSON.parse(atob(t.split('.')[1]));
+        fbState.reviewerLogin = payload.sub || 'admin';
+      } catch(e) { fbState.reviewerLogin = 'admin'; }
+    } else {
+      fbState.reviewerLogin = 'admin';
+    }
+
+    document.getElementById('employeeSelector').addEventListener('change', function() {
+      var login = this.value;
+      loadProfile(login);
+      var fbBtn = document.getElementById('feedbackToggleBtn');
+      var smBtn = document.getElementById('summaryToggleBtn');
+      if (login) {
+        fbBtn.disabled = false;
+        smBtn.disabled = false;
+        fbState.employeeLogin = login;
+        fbState.quarter = fbGetCurrentQuarter();
+        // Phase 74: load action items for selected employee
+        aiState.employeeLogin = login;
+        aiLoadItems();
+      } else {
+        fbBtn.disabled = true;
+        smBtn.disabled = true;
+        fbState.employeeLogin = null;
+        aiState.employeeLogin = null;
+      }
+    });
+
+    // Feedback drawer controls
+    document.getElementById('feedbackToggleBtn').addEventListener('click', fbOpenDrawer);
+    document.getElementById('fbCloseBtn').addEventListener('click', fbCloseDrawer);
+    document.getElementById('fbOverlay').addEventListener('click', fbCloseDrawer);
+    document.getElementById('fbSubmitBtn').addEventListener('click', fbSubmit);
+
+    // Quarter change
+    document.getElementById('fbQuarterSelect').addEventListener('change', function() {
+      fbState.quarter = this.value;
+      fbLoadQuarterData();
+    });
+
+    // Role tabs
+    document.querySelectorAll('.fb-role-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        fbSetRole(this.getAttribute('data-role'));
+      });
+    });
+
+    // PDF upload
+    document.getElementById('fbPdfUpload').addEventListener('change', function() {
+      if (this.files && this.files[0]) fbUploadPdf(this.files[0]);
+    });
+
+    // ─── Phase 74: Action Items wiring ───
+    document.getElementById('aiAddBtn').addEventListener('click', function() { aiShowForm(null); });
+    document.getElementById('aiCancelBtn').addEventListener('click', aiHideForm);
+    document.getElementById('aiSaveBtn').addEventListener('click', aiSaveItem);
+
+    document.querySelectorAll('.ai-filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        aiSetFilter(this.getAttribute('data-filter'));
+      });
+    });
+
+    // ─── Phase 74: Summary modal wiring ───
+    document.getElementById('summaryToggleBtn').addEventListener('click', smOpenModal);
+    document.getElementById('smCloseBtn').addEventListener('click', smCloseModal);
+    document.getElementById('smOverlay').addEventListener('click', smCloseModal);
+    document.getElementById('smPrintBtn').addEventListener('click', smPrint);
+    document.getElementById('smEmailBtn').addEventListener('click', smSendEmail);
+    document.getElementById('smTeamsBtn').addEventListener('click', smSendTeams);
+  });
+
+})();
+</script>
+</body>
+</html>
