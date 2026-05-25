@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Platform Runtime Interface</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f4ff;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .diagram {
+    width: 100%;
+    max-width: 1100px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,80,200,0.12);
+    background: #fff;
+  }
+
+  /* ── Top Banner ── */
+  .top-banner {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1d4ed8 100%);
+    padding: 20px 32px;
+    text-align: center;
+  }
+  .top-banner h1 {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Bottom Banner ── */
+  .bottom-banner {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1d4ed8 100%);
+    padding: 16px 32px;
+    text-align: center;
+  }
+  .bottom-banner h2 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Content Area ── */
+  .content {
+    padding: 24px 20px;
+    background: #eef2ff;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin-bottom: 20px;
+  }
+
+  /* ── Subsystem Grid ── */
+  .subsystems {
+    display: grid;
+    grid-template-columns: 0.7fr 1.4fr 1fr 0.9fr 1fr 0.9fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .subsystem {
+    background: #fff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .subsystem-header {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e40af;
+    text-align: center;
+    border-bottom: 1px solid #bfdbfe;
+  }
+
+  .subsystem-body {
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── Service Items ── */
+  .service {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #1e40af;
+    text-align: center;
+  }
+
+  .service.highlight {
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+
+  /* ── Sub-grid (for Storage) ── */
+  .sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+  }
+
+  .sub-item {
+    background: #f8faff;
+    border: 1px solid #e0e7ff;
+    border-radius: 4px;
+    padding: 4px 2px;
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #475569;
+    text-align: center;
+  }
+
+  .service-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #1e40af;
+    text-align: center;
+    padding: 4px 0 2px;
+  }
+
+  .dots {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 0;
+  }
+
+  @media (max-width: 900px) {
+    .subsystems {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 500px) {
+    .subsystems {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="diagram">
+  <!-- TOP BANNER -->
+  <div class="top-banner">
+    <h1>Our Platform Runtime Interface</h1>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="subtitle">Global Access Rights Manager</div>
+
+    <div class="subsystems">
+
+      <!-- 1. Security Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">Security Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service">ACL</div>
+          <div class="service">Vault</div>
+        </div>
+      </div>
+
+      <!-- 2. I/O Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">I/O Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service highlight">Storage Service</div>
+          <div class="sub-grid">
+            <div class="sub-item">Vector DB</div>
+            <div class="sub-item">ObjectFS</div>
+            <div class="sub-item">NKV</div>
+          </div>
+          <div class="sub-grid">
+            <div class="sub-item">Pinecone</div>
+            <div class="sub-item">S3</div>
+            <div class="sub-item">Local</div>
+          </div>
+          <div class="sub-grid">
+            <div class="sub-item">Milvus</div>
+            <div class="sub-item">Local</div>
+            <div class="sub-item">RAM</div>
+          </div>
+          <div class="sub-grid">
+            <div class="sub-item">Postgres</div>
+            <div class="sub-item">…</div>
+            <div class="sub-item">Redis</div>
+          </div>
+          <div class="sub-grid" style="grid-template-columns:1fr 1fr">
+            <div class="sub-item">…</div>
+            <div class="sub-item">…</div>
+          </div>
+          <div class="service">Networking Service</div>
+          <div class="service">CLI Service</div>
+        </div>
+      </div>
+
+      <!-- 3. Observability Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">Observability Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service">Log Service</div>
+          <div class="service">Open Telemetry</div>
+          <div class="service highlight">Monitoring Service</div>
+          <div class="service">Usage Service</div>
+        </div>
+      </div>
+
+      <!-- 4. Compute Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">Compute Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service">Code Service</div>
+          <div class="service">ECMA</div>
+          <div class="service">Lambda</div>
+          <div class="dots">…</div>
+          <div class="service highlight">Container Service</div>
+          <div class="service">Docker</div>
+        </div>
+      </div>
+
+      <!-- 5. Memory Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">Memory Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service">Agent Runtime Context Service</div>
+          <div class="service">LLM Context Service</div>
+          <div class="service highlight">Cache Service</div>
+          <div class="service">Memory</div>
+          <div class="service">Redis</div>
+          <div class="dots">…</div>
+        </div>
+      </div>
+
+      <!-- 6. Agent Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">Agent Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service">Agent Data Management</div>
+          <div class="service">Agent Lifecycle Management</div>
+          <div class="service">Task Scheduling</div>
+          <div class="service">Components Signaling</div>
+          <div class="service">Triggers</div>
+        </div>
+      </div>
+
+      <!-- 7. LLM Subsystem -->
+      <div class="subsystem">
+        <div class="subsystem-header">LLM Subsystem</div>
+        <div class="subsystem-body">
+          <div class="service highlight">Cloud LLM Service</div>
+          <div class="service">OpenAI</div>
+          <div class="service">Claude</div>
+          <div class="dots">…</div>
+          <div class="service highlight">Local LLM Service</div>
+          <div class="service">Ollama</div>
+          <div class="service">OpenAI</div>
+          <div class="dots">…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM BANNER -->
+  <div class="bottom-banner">
+    <h2>NodeJS / Any other language / Open Source Event Loop</h2>
+  </div>
+</div>
+
+</body>
+</html>

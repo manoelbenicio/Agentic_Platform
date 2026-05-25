@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentVerse — 5 Architectural Visions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--font-display:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-display);background:#030712;color:#F0F1F5;overflow-x:hidden}
+
+  /* ─── NAV ─── */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;background:rgba(3,7,18,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06)}
+  .nav-btn{padding:10px 20px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:transparent;color:#8B8FA3;font-family:var(--font-display);font-size:13px;font-weight:600;cursor:pointer;transition:all .3s ease;letter-spacing:.02em}
+  .nav-btn:hover{border-color:rgba(255,255,255,0.2);color:#F0F1F5;transform:translateY(-1px)}
+  .nav-btn.active{color:#fff;border-color:var(--nav-accent,#60A5FA);background:var(--nav-bg,rgba(96,165,250,0.1));box-shadow:0 0 20px var(--nav-glow,rgba(96,165,250,0.15))}
+  .nav-title{font-size:14px;font-weight:800;letter-spacing:-.02em;margin-right:16px;background:linear-gradient(135deg,#C084FC,#818CF8,#60A5FA);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+  /* ─── SECTION BASE ─── */
+  .arch-section{display:none;min-height:100vh;padding:80px 32px 48px;position:relative;overflow:hidden}
+  .arch-section.active{display:block;animation:fadeIn .6s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ─── HEADER ─── */
+  .arch-header{text-align:center;margin-bottom:48px;position:relative;z-index:2}
+  .arch-icon{font-size:64px;margin-bottom:16px;display:block}
+  .arch-name{font-size:clamp(36px,6vw,56px);font-weight:900;letter-spacing:-.03em;line-height:1;margin-bottom:8px}
+  .arch-tagline{font-size:18px;font-weight:400;color:#8B8FA3;font-style:italic}
+  .arch-desc{max-width:700px;margin:20px auto 0;font-size:15px;line-height:1.7;color:#8B8FA3}
+
+  /* ─── KPI ROW ─── */
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px;position:relative;z-index:2}
+  .kpi-card{border-radius:16px;padding:24px;transition:transform .3s ease,box-shadow .3s ease;cursor:pointer}
+  .kpi-card:hover{transform:translateY(-4px)}
+  .kpi-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+  .kpi-value{font-size:36px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums}
+  .kpi-change{font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px}
+  .kpi-spark{height:32px;margin-top:12px;display:flex;align-items:end;gap:2px}
+  .kpi-spark-bar{flex:1;border-radius:2px;transition:height .6s ease}
+
+  /* ─── DASHBOARD ─── */
+  .dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:32px;position:relative;z-index:2}
+  @media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
+  .dash-panel{border-radius:16px;padding:24px;min-height:300px;position:relative;overflow:hidden}
+  .dash-panel-title{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
+
+  /* ─── CHART (BAR) ─── */
+  .bar-chart{display:flex;align-items:end;gap:8px;height:200px;padding-top:20px}
+  .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .bar{width:100%;border-radius:6px 6px 2px 2px;transition:height 1s ease;position:relative}
+  .bar-label{font-size:10px;font-weight:500;opacity:.6}
+  .bar-val{font-size:10px;font-weight:600;font-family:var(--font-mono)}
+
+  /* ─── DONUT ─── */
+  .donut-wrap{display:flex;align-items:center;justify-content:center;gap:32px;height:200px}
+  .donut-svg{width:180px;height:180px}
+  .donut-legend{display:flex;flex-direction:column;gap:10px}
+  .donut-legend-item{display:flex;align-items:center;gap:8px;font-size:13px}
+  .donut-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+  /* ─── ACTIVITY FEED ─── */
+  .feed{display:flex;flex-direction:column;gap:8px;margin-top:16px;position:relative;z-index:2}
+  .feed-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;font-size:13px;animation:slideIn .4s ease both}
+  .feed-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .feed-time{font-family:var(--font-mono);font-size:11px;opacity:.5;margin-left:auto;flex-shrink:0}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+  /* ─── TERMINAL ─── */
+  .terminal{border-radius:12px;padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;position:relative;z-index:2;margin-top:24px;max-height:220px;overflow:hidden}
+  .terminal-header{display:flex;gap:6px;margin-bottom:12px}
+  .terminal-dot{width:10px;height:10px;border-radius:50%}
+  .terminal-line{opacity:.8}
+  .terminal-cursor{display:inline-block;width:8px;height:16px;animation:blink 1s step-end infinite;vertical-align:middle}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  /* ─── COLOR PALETTE ─── */
+  .palette{display:flex;gap:8px;margin:24px 0;flex-wrap:wrap;position:relative;z-index:2}
+  .palette-swatch{width:48px;height:48px;border-radius:10px;position:relative;cursor:pointer;transition:transform .2s ease;border:2px solid rgba(255,255,255,0.06)}
+  .palette-swatch:hover{transform:scale(1.15)}
+  .palette-swatch::after{content:attr(data-name);position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;opacity:.5;font-weight:500}
+
+  /* ─── BACKGROUND FX ─── */
+  .bg-fx{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0}
+
+  /* SENTINEL scanlines */
+  .scanlines{background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(34,211,238,0.015) 2px,rgba(34,211,238,0.015) 4px);animation:scanMove 8s linear infinite}
+  @keyframes scanMove{from{background-position:0 0}to{background-position:0 100px}}
+  .scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.08),transparent);animation:scanSweep 6s ease-in-out infinite}
+  @keyframes scanSweep{0%{top:-2px}50%{top:100%}100%{top:-2px}}
+
+  /* NEXUS breathing */
+  .breathing{animation:breathe 4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.97}50%{opacity:1}}
+  .neural-bg{position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(129,140,248,0.06) 0%,transparent 70%);animation:neuralPulse 5s ease-in-out infinite}
+  @keyframes neuralPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.15)}}
+
+  /* VORTEX orbit */
+  .orbit-ring{position:absolute;border:1px solid rgba(249,115,22,0.08);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);animation:orbitSpin 30s linear infinite}
+  .orbit-ring:nth-child(2){animation-duration:45s;animation-direction:reverse}
+  .orbit-dot{position:absolute;width:8px;height:8px;border-radius:50%;top:-4px;left:50%;transform:translateX(-50%)}
+  .gravity-well{position:absolute;top:50%;left:50%;width:400px;height:400px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(249,115,22,0.06) 0%,transparent 70%)}
+
+  /* QUANTUM particles */
+  .particle-field{position:absolute;top:0;left:0;right:0;bottom:0}
+  .particle{position:absolute;border-radius:50%;animation:particleFloat 8s ease-in-out infinite}
+  @keyframes particleFloat{0%,100%{transform:translate(0,0)}25%{transform:translate(15px,-20px)}50%{transform:translate(-10px,15px)}75%{transform:translate(20px,10px)}}
+
+  /* OLYMPUS throne glow */
+  .throne-glow{position:absolute;top:0;left:50%;width:800px;height:600px;transform:translateX(-50%);background:radial-gradient(ellipse at top,rgba(245,158,11,0.04) 0%,transparent 60%);animation:throneBreath 8s ease-in-out infinite}
+  @keyframes throneBreath{0%,100%{opacity:.7}50%{opacity:1}}
+  .lightning{position:absolute;top:0;left:50%;width:2px;height:0;background:linear-gradient(180deg,rgba(251,191,36,0.6),transparent);animation:lightningStrike 5s ease-out infinite;transform:translateX(-50%)}
+  @keyframes lightningStrike{0%{height:0;opacity:0;top:0}2%{height:200px;opacity:1}4%{opacity:0}100%{opacity:0}}
+
+  /* ─── ANIMATIONS ─── */
+  .stagger-1{animation-delay:.1s}
+  .stagger-2{animation-delay:.2s}
+  .stagger-3{animation-delay:.3s}
+  .stagger-4{animation-delay:.4s}
+  .stagger-5{animation-delay:.5s}
+
+  /* ─── FOOTER ─── */
+  .arch-footer{text-align:center;padding:40px 0;font-size:12px;color:#5C5F73;position:relative;z-index:2}
+
+  /* ─── TOPOLOGY CANVAS ─── */
+  .topology-canvas{width:100%;height:100%;position:absolute;top:0;left:0}
+
+  /* ─── BADGE ─── */
+  .mode-badges{display:flex;gap:8px;justify-content:center;margin:20px 0;flex-wrap:wrap;position:relative;z-index:2}
+  .mode-badge{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <span class="nav-title">AGENTVERSE</span>
+  <button class="nav-btn active" data-arch="sentinel" style="--nav-accent:#22D3EE;--nav-bg:rgba(34,211,238,0.1);--nav-glow:rgba(34,211,238,0.15)">🛡️ SENTINEL</button>
+  <button class="nav-btn" data-arch="nexus" style="--nav-accent:#818CF8;--nav-bg:rgba(129,140,248,0.1);--nav-glow:rgba(129,140,248,0.15)">🧬 NEXUS</button>
+  <button class="nav-btn" data-arch="vortex" style="--nav-accent:#F97316;--nav-bg:rgba(249,115,22,0.1);--nav-glow:rgba(249,115,22,0.15)">🌀 VORTEX</button>
+  <button class="nav-btn" data-arch="quantum" style="--nav-accent:#38BDF8;--nav-bg:rgba(56,189,248,0.1);--nav-glow:rgba(56,189,248,0.15)">⚛️ QUANTUM</button>
+  <button class="nav-btn" data-arch="olympus" style="--nav-accent:#F59E0B;--nav-bg:rgba(245,158,11,0.1);--nav-glow:rgba(245,158,11,0.15)">⚡ OLYMPUS</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SENTINEL -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="arch-section active" id="sentinel" style="background:#0A0E17">
+  <div class="bg-fx">
+    <div class="scanlines"></div>
+    <div class="scan-line"></div>
+  </div>
+
+  <div class="arch-header">
+    <span class="arch-icon">🛡️</span>
+    <h1 class="arch-name" style="color:#22D3EE">SENTINEL</h1>
+    <p class="arch-tagline">"Military-Grade Command Intelligence"</p>
+    <p class="arch-desc">Imagine NASA Mission Control meets Bloomberg Terminal. Cold precision. Surgical data delivery. Every pixel is a weapon against cost overruns. Keyboard-first. Terminal-native.</p>
+  </div>
+
+  <div class="mode-badges">
+    <span class="mode-badge" style="border-color:rgba(34,211,238,0.3);color:#22D3EE">🖥️ Terminal/CLI</span>
+    <span class="mode-badge" style="border-color:rgba(34,211,238,0.3);color:#22D3EE">📊 Dashboard</span>
+    <span class="mode-badge" style="border-color:rgba(34,211,238,0.3);color:#22D3EE">🌐 3D Globe</span>
+    <span class="mode-badge" style="border-color:rgba(34,211,238,0.3);color:#22D3EE">🔌 API</span>
+  </div>
+
+  <div class="palette">
+    <div class="palette-swatch" style="background:#0A0E17" data-name="Void"></div>
+    <div class="palette-swatch" style="background:#111827" data-name="Panel"></div>
+    <div class="palette-swatch" style="background:#1E293B" data-name="Card"></div>
+    <div class="palette-swatch" style="background:#22D3EE" data-name="Cyan"></div>
+    <div class="palette-swatch" style="background:#F59E0B" data-name="Amber"></div>
+    <div class="palette-swatch" style="background:#EF4444" data-name="Threat"></div>
+    <div class="palette-swatch" style="background:#10B981" data-name="Ops"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card stagger-1" style="background:rgba(17,24,39,0.8);border:1px solid rgba(34,211,238,0.1);box-shadow:0 0 30px rgba(34,211,238,0.03)">
+      <div class="kpi-label" style="color:#22D3EE">● FLEET STATUS</div>
+      <div class="kpi-value" style="color:#F0F1F5">247</div>
+      <div class="kpi-change" style="color:#10B981">▲ 95.1% operational</div>
+      <div class="kpi-spark" id="sen-spark-1"></div>
+    </div>
+    <div class="kpi-card stagger-2" style="background:rgba(17,24,39,0.8);border:1px solid rgba(34,211,238,0.1)">
+      <div class="kpi-label" style="color:#F59E0B">● COST / MTD</div>
+      <div class="kpi-value" style="color:#F0F1F5">R$42,1K</div>
+      <div class="kpi-change" style="color:#F59E0B">▲ +12.3% vs meta</div>
+      <div class="kpi-spark" id="sen-spark-2"></div>
+    </div>
+    <div class="kpi-card stagger-3" style="background:rgba(17,24,39,0.8);border:1px solid rgba(34,211,238,0.1)">
+      <div class="kpi-label" style="color:#22D3EE">● BUDGET UTIL</div>
+      <div class="kpi-value" style="color:#F0F1F5">67,3%</div>
+      <div class="kpi-change" style="color:#10B981">✓ Dentro do limite</div>
+      <div class="kpi-spark" id="sen-spark-3"></div>
+    </div>
+    <div class="kpi-card stagger-4" style="background:rgba(17,24,39,0.8);border:1px solid rgba(EF,68,68,0.15);box-shadow:0 0 20px rgba(239,68,68,0.05)">
+      <div class="kpi-label" style="color:#EF4444">● AMEAÇAS</div>
+      <div class="kpi-value" style="color:#EF4444;animation:pulse 2s ease-in-out infinite">3</div>
+      <div class="kpi-change" style="color:#EF4444">⚠ 1 crítica</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-panel" style="background:rgba(17,24,39,0.8);border:1px solid rgba(34,211,238,0.08)">
+      <div class="dash-panel-title" style="color:#22D3EE">CUSTO POR VENDOR — ÚLTIMOS 7 DIAS</div>
+      <div class="bar-chart" id="sen-bars"></div>
+    </div>
+    <div class="dash-panel" style="background:rgba(17,24,39,0.8);border:1px solid rgba(34,211,238,0.08)">
+      <div class="dash-panel-title" style="color:#22D3EE">STATUS DA FROTA</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#1E293B" stroke-width="12"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#10B981" stroke-width="12" stroke-dasharray="188 252" stroke-dashoffset="-63" stroke-linecap="round" style="transition:stroke-dasharray 1.5s ease"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="12" stroke-dasharray="38 252" stroke-dashoffset="-251" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#EF4444" stroke-width="12" stroke-dasharray="13 252" stroke-dashoffset="-289" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#6B7280" stroke-width="12" stroke-dasharray="13 252" stroke-dashoffset="-302" stroke-linecap="round"/>
+          <text x="50" y="48" text-anchor="middle" fill="#F0F1F5" font-size="14" font-weight="800" font-family="Inter">247</text>
+          <text x="50" y="60" text-anchor="middle" fill="#8B8FA3" font-size="6" font-family="Inter">AGENTES</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#10B981"></div><span style="color:#8B8FA3">Ativos — 187</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#F59E0B"></div><span style="color:#8B8FA3">Idle — 38</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#EF4444"></div><span style="color:#8B8FA3">Erro — 12</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#6B7280"></div><span style="color:#8B8FA3">Offline — 10</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal" style="background:#0D1117;border:1px solid rgba(34,211,238,0.1)">
+    <div class="terminal-header">
+      <div class="terminal-dot" style="background:#EF4444"></div>
+      <div class="terminal-dot" style="background:#F59E0B"></div>
+      <div class="terminal-dot" style="background:#10B981"></div>
+      <span style="margin-left:8px;font-size:11px;color:#22D3EE;opacity:.6">SENTINEL TERMINAL</span>
+    </div>
+    <div class="terminal-line" style="color:#8B8FA3">$ av fleet status</div>
+    <div class="terminal-line" style="color:#22D3EE">● Fleet: 247 agents | 187 active | 38 idle | 12 error | 10 offline</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ av cost report --period=mtd</div>
+    <div class="terminal-line" style="color:#F59E0B">⚠ Total: R$42.138,47 | Budget: R$62.500,00 | Util: 67,3%</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ av threat scan</div>
+    <div class="terminal-line" style="color:#EF4444">✗ CRITICAL: Agent-NX07 cost spike +340% (R$2.847/dia)</div>
+    <div class="terminal-line" style="color:#F59E0B">⚠ WARNING: Squad-Beta approaching budget limit (92%)</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ <span class="terminal-cursor" style="background:#22D3EE"></span></div>
+  </div>
+
+  <div class="arch-footer">SENTINEL — Precisão militar para gestão de agentes IA</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- NEXUS -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="arch-section" id="nexus" style="background:#030712">
+  <div class="bg-fx breathing">
+    <div class="neural-bg"></div>
+  </div>
+
+  <div class="arch-header">
+    <span class="arch-icon">🧬</span>
+    <h1 class="arch-name" style="background:linear-gradient(135deg,#818CF8,#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent">NEXUS</h1>
+    <p class="arch-tagline">"Living Neural Network"</p>
+    <p class="arch-desc">The platform IS the neural network. Data flows like synaptic signals through glowing pathways. The dashboard breathes — literally. Bioluminescent, organic, alive.</p>
+  </div>
+
+  <div class="mode-badges">
+    <span class="mode-badge" style="border-color:rgba(129,140,248,0.3);color:#818CF8">🖥️ Terminal/CLI</span>
+    <span class="mode-badge" style="border-color:rgba(192,132,252,0.3);color:#C084FC">📊 Dashboard</span>
+    <span class="mode-badge" style="border-color:rgba(129,140,248,0.3);color:#818CF8">🌐 3D Globe</span>
+    <span class="mode-badge" style="border-color:rgba(192,132,252,0.3);color:#C084FC">🔌 API</span>
+  </div>
+
+  <div class="palette">
+    <div class="palette-swatch" style="background:#030712" data-name="Abyss"></div>
+    <div class="palette-swatch" style="background:#0A1628" data-name="Ocean"></div>
+    <div class="palette-swatch" style="background:#0F2340" data-name="Deep"></div>
+    <div class="palette-swatch" style="background:#818CF8" data-name="Indigo"></div>
+    <div class="palette-swatch" style="background:#C084FC" data-name="Purple"></div>
+    <div class="palette-swatch" style="background:#34D399" data-name="Emerald"></div>
+    <div class="palette-swatch" style="background:#FB7185" data-name="Rose"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card stagger-1" style="background:rgba(10,22,40,0.8);border:1px solid rgba(129,140,248,0.12);box-shadow:0 0 40px rgba(129,140,248,0.04)">
+      <div class="kpi-label" style="color:#818CF8">◉ PULSO SINÁPTICO</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#818CF8,#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent">247</div>
+      <div class="kpi-change" style="color:#34D399">∿ Rede estável</div>
+      <div class="kpi-spark" id="nex-spark-1"></div>
+    </div>
+    <div class="kpi-card stagger-2" style="background:rgba(10,22,40,0.8);border:1px solid rgba(129,140,248,0.12)">
+      <div class="kpi-label" style="color:#C084FC">◉ ENERGIA CONSUMIDA</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#C084FC,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">R$42,1K</div>
+      <div class="kpi-change" style="color:#FB7185">∿ +12% metabolismo</div>
+    </div>
+    <div class="kpi-card stagger-3" style="background:rgba(10,22,40,0.8);border:1px solid rgba(129,140,248,0.12)">
+      <div class="kpi-label" style="color:#34D399">◉ VITALIDADE</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#34D399,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">99,7%</div>
+      <div class="kpi-change" style="color:#34D399">♥ Saúde perfeita</div>
+    </div>
+    <div class="kpi-card stagger-4" style="background:rgba(10,22,40,0.8);border:1px solid rgba(129,140,248,0.12)">
+      <div class="kpi-label" style="color:#818CF8">◉ CRESCIMENTO</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#818CF8,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent">+18</div>
+      <div class="kpi-change" style="color:#34D399">↗ novos nós esta semana</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-panel" style="background:rgba(10,22,40,0.7);border:1px solid rgba(129,140,248,0.08);position:relative">
+      <div class="dash-panel-title" style="color:#818CF8">TOPOLOGIA NEURAL — VISÃO SINÁPTICA</div>
+      <canvas id="nexus-topology" style="width:100%;height:240px"></canvas>
+    </div>
+    <div class="dash-panel" style="background:rgba(10,22,40,0.7);border:1px solid rgba(129,140,248,0.08)">
+      <div class="dash-panel-title" style="color:#C084FC">FLUXO DE DADOS — ÚLTIMAS 24H</div>
+      <div class="bar-chart" id="nex-bars"></div>
+    </div>
+  </div>
+
+  <div class="terminal" style="background:rgba(10,22,40,0.9);border:1px solid rgba(129,140,248,0.1)">
+    <div class="terminal-header">
+      <div class="terminal-dot" style="background:#FB7185"></div>
+      <div class="terminal-dot" style="background:#C084FC"></div>
+      <div class="terminal-dot" style="background:#34D399"></div>
+      <span style="margin-left:8px;font-size:11px;color:#818CF8;opacity:.6">NEXUS NEURAL CONSOLE</span>
+    </div>
+    <div class="terminal-line" style="color:#8B8FA3">$ nexus pulse --network</div>
+    <div class="terminal-line" style="color:#818CF8">∿ Network: 247 nodes | 1.284 synapses | Latency: 12ms avg</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ nexus synapse trace agent-07 agent-12</div>
+    <div class="terminal-line" style="color:#C084FC">Agent-07 ──►[2.3s]──► Agent-12 ──►[0.8s]──► Agent-19</div>
+    <div class="terminal-line" style="color:#34D399">∿ Pathway optimized: -15% latency, -8% cost</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ <span class="terminal-cursor" style="background:#818CF8"></span></div>
+  </div>
+
+  <div class="arch-footer">NEXUS — O dashboard que respira e evolui com seus agentes</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- VORTEX -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="arch-section" id="vortex" style="background:#050510">
+  <div class="bg-fx">
+    <div class="gravity-well"></div>
+    <div class="orbit-ring" style="width:500px;height:500px"><div class="orbit-dot" style="background:#F97316;box-shadow:0 0 12px #F97316"></div></div>
+    <div class="orbit-ring" style="width:350px;height:350px"><div class="orbit-dot" style="background:#A855F7;box-shadow:0 0 12px #A855F7"></div></div>
+    <div class="orbit-ring" style="width:200px;height:200px"><div class="orbit-dot" style="background:#06B6D4;box-shadow:0 0 12px #06B6D4"></div></div>
+  </div>
+
+  <div class="arch-header">
+    <span class="arch-icon">🌀</span>
+    <h1 class="arch-name" style="background:linear-gradient(135deg,#F97316,#A855F7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">VORTEX</h1>
+    <p class="arch-tagline">"Gravitational Data Physics"</p>
+    <p class="arch-desc">Data has mass. Cost has gravity. Expensive agents pull other elements toward them. The entire interface operates on physics — orbital mechanics, gravitational fields, centrifugal force.</p>
+  </div>
+
+  <div class="mode-badges">
+    <span class="mode-badge" style="border-color:rgba(249,115,22,0.3);color:#F97316">🖥️ Terminal/CLI</span>
+    <span class="mode-badge" style="border-color:rgba(168,85,247,0.3);color:#A855F7">📊 Dashboard</span>
+    <span class="mode-badge" style="border-color:rgba(249,115,22,0.3);color:#F97316">🌐 3D Globe</span>
+    <span class="mode-badge" style="border-color:rgba(168,85,247,0.3);color:#A855F7">🔌 API</span>
+  </div>
+
+  <div class="palette">
+    <div class="palette-swatch" style="background:#050510" data-name="Void"></div>
+    <div class="palette-swatch" style="background:#0D0D2B" data-name="DarkMat"></div>
+    <div class="palette-swatch" style="background:#1A1A4E" data-name="Nebula"></div>
+    <div class="palette-swatch" style="background:#F97316" data-name="Energy"></div>
+    <div class="palette-swatch" style="background:#A855F7" data-name="Violet"></div>
+    <div class="palette-swatch" style="background:#06B6D4" data-name="Velocity"></div>
+    <div class="palette-swatch" style="background:#22C55E" data-name="Stable"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card stagger-1" style="background:rgba(13,13,43,0.8);border:1px solid rgba(249,115,22,0.12);box-shadow:0 0 30px rgba(249,115,22,0.04)">
+      <div class="kpi-label" style="color:#F97316">⊕ MASSA TOTAL</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#F97316,#A855F7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">R$42,1K</div>
+      <div class="kpi-change" style="color:#F97316">▲ Massa crescente</div>
+    </div>
+    <div class="kpi-card stagger-2" style="background:rgba(13,13,43,0.8);border:1px solid rgba(168,85,247,0.12)">
+      <div class="kpi-label" style="color:#A855F7">◎ VELOCIDADE</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#A855F7,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">847</div>
+      <div class="kpi-change" style="color:#06B6D4">req/min — estável</div>
+    </div>
+    <div class="kpi-card stagger-3" style="background:rgba(13,13,43,0.8);border:1px solid rgba(6,182,212,0.12)">
+      <div class="kpi-label" style="color:#06B6D4">◉ ÓRBITA</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#06B6D4,#22C55E);-webkit-background-clip:text;-webkit-text-fill-color:transparent">3,2AU</div>
+      <div class="kpi-change" style="color:#22C55E">✓ Órbita estável</div>
+    </div>
+    <div class="kpi-card stagger-4" style="background:rgba(13,13,43,0.8);border:1px solid rgba(249,115,22,0.12)">
+      <div class="kpi-label" style="color:#F97316">⊗ GRAVITAÇÃO</div>
+      <div class="kpi-value" style="color:#F97316">ALTA</div>
+      <div class="kpi-change" style="color:#F97316">⚠ Atração forte detectada</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-panel" style="background:rgba(13,13,43,0.7);border:1px solid rgba(249,115,22,0.08)">
+      <div class="dash-panel-title" style="color:#F97316">CAMPO GRAVITACIONAL — CUSTO POR EQUIPE</div>
+      <div class="bar-chart" id="vtx-bars"></div>
+    </div>
+    <div class="dash-panel" style="background:rgba(13,13,43,0.7);border:1px solid rgba(168,85,247,0.08)">
+      <div class="dash-panel-title" style="color:#A855F7">ENTROPIA DO SISTEMA</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#1A1A4E" stroke-width="12"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#F97316" stroke-width="12" stroke-dasharray="125 252" stroke-dashoffset="-63" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#A855F7" stroke-width="12" stroke-dasharray="63 252" stroke-dashoffset="-188" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#06B6D4" stroke-width="12" stroke-dasharray="50 252" stroke-dashoffset="-251" stroke-linecap="round"/>
+          <text x="50" y="48" text-anchor="middle" fill="#F0F1F5" font-size="12" font-weight="800" font-family="Inter">67,3%</text>
+          <text x="50" y="60" text-anchor="middle" fill="#8B8FA3" font-size="6" font-family="Inter">BUDGET</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#F97316"></div><span style="color:#8B8FA3">OpenAI — 50%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#A855F7"></div><span style="color:#8B8FA3">Anthropic — 25%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#06B6D4"></div><span style="color:#8B8FA3">Google — 20%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#22C55E"></div><span style="color:#8B8FA3">Custom — 5%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal" style="background:rgba(13,13,43,0.9);border:1px solid rgba(249,115,22,0.1)">
+    <div class="terminal-header">
+      <div class="terminal-dot" style="background:#DC2626"></div>
+      <div class="terminal-dot" style="background:#F97316"></div>
+      <div class="terminal-dot" style="background:#22C55E"></div>
+      <span style="margin-left:8px;font-size:11px;color:#F97316;opacity:.6">VORTEX MISSION CONTROL</span>
+    </div>
+    <div class="terminal-line" style="color:#8B8FA3">$ vortex orbit status --all</div>
+    <div class="terminal-line" style="color:#F97316">⊕ Core mass: R$42.1K | Orbital agents: 247 | Escape velocity: none</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ vortex trajectory predict agent-07 --days=30</div>
+    <div class="terminal-line" style="color:#A855F7">◎ Projected: R$2.847/dia → R$85.4K/mês (decaying orbit — budget impact)</div>
+    <div class="terminal-line" style="color:#06B6D4">↻ Recommend: orbital correction (throttle to 60%)</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ <span class="terminal-cursor" style="background:#F97316"></span></div>
+  </div>
+
+  <div class="arch-footer">VORTEX — Onde dados têm massa e custo tem gravidade</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- QUANTUM -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="arch-section" id="quantum" style="background:#020617">
+  <div class="bg-fx" id="quantum-particles"></div>
+
+  <div class="arch-header">
+    <span class="arch-icon">⚛️</span>
+    <h1 class="arch-name" style="background:linear-gradient(135deg,#38BDF8,#E879F9);-webkit-background-clip:text;-webkit-text-fill-color:transparent">QUANTUM</h1>
+    <p class="arch-tagline">"Particle-Level Data Intelligence"</p>
+    <p class="arch-desc">Every data point is a particle. Every metric is a wave. Drill down and reality crystallizes — the wave function collapses into definite data. Think CERN's control room meets holographic displays.</p>
+  </div>
+
+  <div class="mode-badges">
+    <span class="mode-badge" style="border-color:rgba(56,189,248,0.3);color:#38BDF8">🖥️ Terminal/CLI</span>
+    <span class="mode-badge" style="border-color:rgba(232,121,249,0.3);color:#E879F9">📊 Dashboard</span>
+    <span class="mode-badge" style="border-color:rgba(56,189,248,0.3);color:#38BDF8">🌐 3D Globe</span>
+    <span class="mode-badge" style="border-color:rgba(232,121,249,0.3);color:#E879F9">🔌 API</span>
+  </div>
+
+  <div class="palette">
+    <div class="palette-swatch" style="background:#020617" data-name="Black"></div>
+    <div class="palette-swatch" style="background:#0F172A" data-name="Field"></div>
+    <div class="palette-swatch" style="background:#1E293B" data-name="Chamber"></div>
+    <div class="palette-swatch" style="background:#38BDF8" data-name="Electron"></div>
+    <div class="palette-swatch" style="background:#E879F9" data-name="Positron"></div>
+    <div class="palette-swatch" style="background:#FBBF24" data-name="Photon"></div>
+    <div class="palette-swatch" style="background:#4ADE80" data-name="Stable"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card stagger-1" style="background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.12);box-shadow:0 0 30px rgba(56,189,248,0.04)">
+      <div class="kpi-label" style="color:#38BDF8">ψ FUNÇÃO DE ONDA</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#38BDF8,#E879F9);-webkit-background-clip:text;-webkit-text-fill-color:transparent">247</div>
+      <div class="kpi-change" style="color:#4ADE80">∿ Estado coerente</div>
+    </div>
+    <div class="kpi-card stagger-2" style="background:rgba(15,23,42,0.8);border:1px solid rgba(232,121,249,0.12)">
+      <div class="kpi-label" style="color:#E879F9">σ SPIN</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#E879F9,#FBBF24);-webkit-background-clip:text;-webkit-text-fill-color:transparent">↑95%</div>
+      <div class="kpi-change" style="color:#4ADE80">↑ 235 up | ↓ 12 down</div>
+    </div>
+    <div class="kpi-card stagger-3" style="background:rgba(15,23,42,0.8);border:1px solid rgba(251,191,36,0.12)">
+      <div class="kpi-label" style="color:#FBBF24">q CARGA</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#FBBF24,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">R$42,1K</div>
+      <div class="kpi-change" style="color:#FBBF24">+ Budget: 67,3%</div>
+    </div>
+    <div class="kpi-card stagger-4" style="background:rgba(15,23,42,0.8);border:1px solid rgba(56,189,248,0.12)">
+      <div class="kpi-label" style="color:#38BDF8">m MASSA</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#38BDF8,#4ADE80);-webkit-background-clip:text;-webkit-text-fill-color:transparent">3,2TeV</div>
+      <div class="kpi-change" style="color:#38BDF8">▲ +12% energia</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-panel" style="background:rgba(15,23,42,0.7);border:1px solid rgba(56,189,248,0.08)">
+      <div class="dash-panel-title" style="color:#38BDF8">ESPECTRO DE EMISSÃO — CUSTO POR MODELO</div>
+      <div class="bar-chart" id="qtm-bars"></div>
+    </div>
+    <div class="dash-panel" style="background:rgba(15,23,42,0.7);border:1px solid rgba(232,121,249,0.08)">
+      <div class="dash-panel-title" style="color:#E879F9">DISTRIBUIÇÃO QUÂNTICA</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#1E293B" stroke-width="10"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#38BDF8" stroke-width="10" stroke-dasharray="100 252" stroke-dashoffset="-63" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#E879F9" stroke-width="10" stroke-dasharray="75 252" stroke-dashoffset="-163" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#FBBF24" stroke-width="10" stroke-dasharray="50 252" stroke-dashoffset="-238" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#4ADE80" stroke-width="10" stroke-dasharray="27 252" stroke-dashoffset="-288" stroke-linecap="round"/>
+          <text x="50" y="46" text-anchor="middle" fill="#F0F1F5" font-size="8" font-weight="800" font-family="Inter">|ψ⟩</text>
+          <text x="50" y="58" text-anchor="middle" fill="#8B8FA3" font-size="6" font-family="Inter">SUPERPOSIÇÃO</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#38BDF8"></div><span style="color:#8B8FA3">GPT-4o — 40%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#E879F9"></div><span style="color:#8B8FA3">Claude — 30%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#FBBF24"></div><span style="color:#8B8FA3">Gemini — 20%</span></div>
+          <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#4ADE80"></div><span style="color:#8B8FA3">Custom — 10%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal" style="background:rgba(15,23,42,0.9);border:1px solid rgba(56,189,248,0.1)">
+    <div class="terminal-header">
+      <div class="terminal-dot" style="background:#F43F5E"></div>
+      <div class="terminal-dot" style="background:#E879F9"></div>
+      <div class="terminal-dot" style="background:#4ADE80"></div>
+      <span style="margin-left:8px;font-size:11px;color:#38BDF8;opacity:.6">QUANTUM CONSOLE</span>
+    </div>
+    <div class="terminal-line" style="color:#8B8FA3">$ quantum observe agent-07</div>
+    <div class="terminal-line" style="color:#38BDF8">⟨ψ| State collapsed: |idle⟩ → |active⟩ (confidence: 99.7%)</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ quantum entangle --agents=07,12</div>
+    <div class="terminal-line" style="color:#E879F9">⊗ Entanglement confirmed: Agent-07 ↔ Agent-12 (correlation: 0.94)</div>
+    <div class="terminal-line" style="color:#FBBF24">⟨ψ| Cost: R$42.138 ± R$2.340 (95% confidence interval)</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ <span class="terminal-cursor" style="background:#38BDF8"></span></div>
+  </div>
+
+  <div class="arch-footer">QUANTUM — Onde observar os dados muda a realidade</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OLYMPUS -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="arch-section" id="olympus" style="background:#0C0A09">
+  <div class="bg-fx">
+    <div class="throne-glow"></div>
+    <div class="lightning"></div>
+    <div class="lightning" style="left:30%;animation-delay:2.5s"></div>
+    <div class="lightning" style="left:70%;animation-delay:4s"></div>
+  </div>
+
+  <div class="arch-header">
+    <span class="arch-icon">⚡</span>
+    <h1 class="arch-name" style="background:linear-gradient(135deg,#F59E0B,#D4A574,#F59E0B);-webkit-background-clip:text;-webkit-text-fill-color:transparent">OLYMPUS</h1>
+    <p class="arch-tagline">"Divine Engineering"</p>
+    <p class="arch-desc">You are Zeus. Agents are your pantheon of gods. The interface radiates power, authority, and absolute control. Ancient Greek temples rebuilt with holographic technology meets luxury watchmaking.</p>
+  </div>
+
+  <div class="mode-badges">
+    <span class="mode-badge" style="border-color:rgba(245,158,11,0.3);color:#F59E0B">🖥️ Terminal/CLI</span>
+    <span class="mode-badge" style="border-color:rgba(212,165,116,0.3);color:#D4A574">📊 Dashboard</span>
+    <span class="mode-badge" style="border-color:rgba(245,158,11,0.3);color:#F59E0B">🌐 3D Globe</span>
+    <span class="mode-badge" style="border-color:rgba(212,165,116,0.3);color:#D4A574">🔌 API</span>
+  </div>
+
+  <div class="palette">
+    <div class="palette-swatch" style="background:#0C0A09" data-name="Obsidian"></div>
+    <div class="palette-swatch" style="background:#1C1917" data-name="Marble"></div>
+    <div class="palette-swatch" style="background:#292524" data-name="Stone"></div>
+    <div class="palette-swatch" style="background:#F59E0B" data-name="Gold"></div>
+    <div class="palette-swatch" style="background:#D4A574" data-name="Bronze"></div>
+    <div class="palette-swatch" style="background:#E2E8F0" data-name="Marble"></div>
+    <div class="palette-swatch" style="background:#B91C1C" data-name="Wrath"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card stagger-1" style="background:rgba(28,25,23,0.8);border:1px solid rgba(245,158,11,0.15);box-shadow:0 0 30px rgba(245,158,11,0.04)">
+      <div class="kpi-label" style="color:#F59E0B">⚡ PODER</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#F59E0B,#D4A574);-webkit-background-clip:text;-webkit-text-fill-color:transparent">247</div>
+      <div class="kpi-change" style="color:#15803D">🏛 Panteão completo</div>
+    </div>
+    <div class="kpi-card stagger-2" style="background:rgba(28,25,23,0.8);border:1px solid rgba(212,165,116,0.15)">
+      <div class="kpi-label" style="color:#D4A574">🏛 TESOURO</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#D4A574,#F59E0B);-webkit-background-clip:text;-webkit-text-fill-color:transparent">R$42,1K</div>
+      <div class="kpi-change" style="color:#F59E0B">⚡ 67,3% do cofre</div>
+    </div>
+    <div class="kpi-card stagger-3" style="background:rgba(28,25,23,0.8);border:1px solid rgba(226,232,240,0.1)">
+      <div class="kpi-label" style="color:#E2E8F0">🛡 ÉGIDE</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#E2E8F0,#D4A574);-webkit-background-clip:text;-webkit-text-fill-color:transparent">100%</div>
+      <div class="kpi-change" style="color:#15803D">🛡 Zero brechas</div>
+    </div>
+    <div class="kpi-card stagger-4" style="background:rgba(28,25,23,0.8);border:1px solid rgba(245,158,11,0.15)">
+      <div class="kpi-label" style="color:#F59E0B">📜 ORÁCULO</div>
+      <div class="kpi-value" style="background:linear-gradient(135deg,#F59E0B,#15803D);-webkit-background-clip:text;-webkit-text-fill-color:transparent">+12%</div>
+      <div class="kpi-change" style="color:#15803D">↗ Tendência favorável</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-panel" style="background:rgba(28,25,23,0.7);border:1px solid rgba(245,158,11,0.08)">
+      <div class="dash-panel-title" style="color:#F59E0B">⚡ PODER DIVINO POR DOMÍNIO</div>
+      <div class="bar-chart" id="oly-bars"></div>
+    </div>
+    <div class="dash-panel" style="background:rgba(28,25,23,0.7);border:1px solid rgba(212,165,116,0.08)">
+      <div class="dash-panel-title" style="color:#D4A574">🏛 HIERARQUIA DIVINA</div>
+      <div style="padding:20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">⚡</div>
+        <div style="font-size:13px;font-weight:700;color:#F59E0B;margin-bottom:16px">ZEUS (Você)</div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-bottom:16px">
+          <div style="text-align:center"><div style="font-size:20px">🦉</div><div style="font-size:11px;color:#D4A574;font-weight:600">ATHENA</div><div style="font-size:10px;color:#8B8FA3">Squad Alpha</div><div style="font-size:10px;color:#15803D">●●●●● 5/5</div></div>
+          <div style="text-align:center"><div style="font-size:20px">🪽</div><div style="font-size:11px;color:#D4A574;font-weight:600">HERMES</div><div style="font-size:10px;color:#8B8FA3">Squad Beta</div><div style="font-size:10px;color:#F59E0B">●●●○○ 3/5</div></div>
+          <div style="text-align:center"><div style="font-size:20px">🔨</div><div style="font-size:11px;color:#D4A574;font-weight:600">HEFESTO</div><div style="font-size:10px;color:#8B8FA3">Squad Gamma</div><div style="font-size:10px;color:#B91C1C">●●○○○ 2/5</div></div>
+          <div style="text-align:center"><div style="font-size:20px">☀️</div><div style="font-size:11px;color:#D4A574;font-weight:600">APOLLO</div><div style="font-size:10px;color:#8B8FA3">Squad Delta</div><div style="font-size:10px;color:#15803D">●●●●○ 4/5</div></div>
+        </div>
+        <div style="font-size:11px;color:#5C5F73;margin-top:8px;font-style:italic">📜 "Squad Hermes excederá o orçamento em 3 dias. Recomendo: reduzir Agent-12."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal" style="background:rgba(28,25,23,0.9);border:1px solid rgba(245,158,11,0.1)">
+    <div class="terminal-header">
+      <div class="terminal-dot" style="background:#B91C1C"></div>
+      <div class="terminal-dot" style="background:#F59E0B"></div>
+      <div class="terminal-dot" style="background:#15803D"></div>
+      <span style="margin-left:8px;font-size:11px;color:#F59E0B;opacity:.6">ORACLE CONSOLE</span>
+    </div>
+    <div class="terminal-line" style="color:#8B8FA3">$ olympus decree --status</div>
+    <div class="terminal-line" style="color:#F59E0B">⚡ Pantheon: 247 gods | 4 squads | Treasury: R$42.1K / R$62.5K</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ olympus oracle forecast --squad=hermes</div>
+    <div class="terminal-line" style="color:#D4A574">📜 Prophecy: Squad Hermes exceeds treasury in 72h at current pace</div>
+    <div class="terminal-line" style="color:#B91C1C">⚡ Recommended decree: Throttle Agent-12 to 60% power</div>
+    <div class="terminal-line" style="color:#8B8FA3">$ <span class="terminal-cursor" style="background:#F59E0B"></span></div>
+  </div>
+
+  <div class="arch-footer">OLYMPUS — Controle absoluto com autoridade divina</div>
+</section>
+
+<script>
+// ─── NAV SWITCHING ───
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.arch-section').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(btn.dataset.arch);
+    target.classList.add('active');
+    // Re-trigger animations
+    target.querySelectorAll('.kpi-card,.feed-item').forEach((el,i) => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+    // Rebuild bars
+    buildBars();
+    if (btn.dataset.arch === 'nexus') drawTopology();
+    if (btn.dataset.arch === 'quantum') spawnParticles();
+  });
+});
+
+// ─── SPARKLINES ───
+function buildSparkline(id, color, data) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  const max = Math.max(...data);
+  data.forEach((v, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'kpi-spark-bar';
+    bar.style.background = color;
+    bar.style.opacity = 0.3 + (v/max)*0.7;
+    bar.style.height = '0px';
+    el.appendChild(bar);
+    setTimeout(() => { bar.style.height = (v/max*100)+'%'; }, 100 + i*50);
+  });
+}
+
+// ─── BAR CHARTS ───
+function buildBarChart(id, data, colors) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  const max = Math.max(...data.map(d => d.value));
+  data.forEach((d, i) => {
+    const group = document.createElement('div');
+    group.className = 'bar-group';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.background = colors[i % colors.length];
+    bar.style.height = '0px';
+    bar.style.opacity = '0.85';
+    const val = document.createElement('div');
+    val.className = 'bar-val';
+    val.style.color = colors[i % colors.length];
+    val.textContent = d.label2 || '';
+    const label = document.createElement('div');
+    label.className = 'bar-label';
+    label.style.color = '#8B8FA3';
+    label.textContent = d.label;
+    group.appendChild(val);
+    group.appendChild(bar);
+    group.appendChild(label);
+    el.appendChild(group);
+    setTimeout(() => { bar.style.height = (d.value/max*180)+'px'; }, 200 + i*100);
+  });
+}
+
+function buildBars() {
+  const vendors = [
+    {label:'OpenAI',label2:'R$18K',value:18},{label:'Anthropic',label2:'R$12K',value:12},
+    {label:'Google',label2:'R$7K',value:7},{label:'Bedrock',label2:'R$3K',value:3},{label:'Custom',label2:'R$2K',value:2}
+  ];
+  buildBarChart('sen-bars', vendors, ['#22D3EE','#22D3EE','#22D3EE','#22D3EE','#22D3EE']);
+  buildBarChart('nex-bars', vendors, ['#818CF8','#C084FC','#34D399','#818CF8','#C084FC']);
+  buildBarChart('vtx-bars', vendors, ['#F97316','#A855F7','#06B6D4','#F97316','#A855F7']);
+  buildBarChart('qtm-bars', vendors, ['#38BDF8','#E879F9','#FBBF24','#4ADE80','#38BDF8']);
+  buildBarChart('oly-bars', vendors, ['#F59E0B','#D4A574','#E2E8F0','#F59E0B','#D4A574']);
+
+  // Sparklines
+  const sparkData = [3,5,4,7,6,8,5,9,7,10,8,12];
+  buildSparkline('sen-spark-1','#22D3EE',sparkData);
+  buildSparkline('sen-spark-2','#F59E0B',[8,9,7,10,12,11,14,13,16,15,18,17]);
+  buildSparkline('sen-spark-3','#10B981',[60,62,58,65,63,67,64,68,66,70,67,67]);
+  buildSparkline('nex-spark-1','#818CF8',sparkData);
+}
+
+// ─── NEXUS TOPOLOGY ───
+function drawTopology() {
+  const canvas = document.getElementById('nexus-topology');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = canvas.height = 240;
+  ctx.clearRect(0,0,W,H);
+
+  const nodes = [];
+  for (let i = 0; i < 20; i++) {
+    nodes.push({
+      x: 60 + Math.random()*(W-120), y: 30 + Math.random()*(H-60),
+      r: 4 + Math.random()*8, color: ['#818CF8','#C084FC','#34D399','#FB7185'][Math.floor(Math.random()*4)],
+      vx: (Math.random()-.5)*0.3, vy: (Math.random()-.5)*0.3
+    });
+  }
+
+  const edges = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      if (Math.sqrt(dx*dx+dy*dy) < 150 && Math.random() > 0.4) {
+        edges.push([i,j]);
+      }
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0,0,W,H);
+    // Edges
+    edges.forEach(([a,b]) => {
+      ctx.beginPath();
+      ctx.moveTo(nodes[a].x, nodes[a].y);
+      ctx.lineTo(nodes[b].x, nodes[b].y);
+      ctx.strokeStyle = 'rgba(129,140,248,0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    // Nodes
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 20 || n.x > W-20) n.vx *= -1;
+      if (n.y < 20 || n.y > H-20) n.vy *= -1;
+      // Glow
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r*2.5, 0, Math.PI*2);
+      ctx.fillStyle = n.color.replace(')', ',0.08)').replace('rgb','rgba');
+      ctx.fill();
+      // Node
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = n.color;
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ─── QUANTUM PARTICLES ───
+function spawnParticles() {
+  const container = document.getElementById('quantum-particles');
+  if (!container || container.childElementCount > 0) return;
+  const colors = ['#38BDF8','#E879F9','#FBBF24','#4ADE80'];
+  for (let i = 0; i < 50; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.width = (2 + Math.random()*4) + 'px';
+    p.style.height = p.style.width;
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.opacity = 0.15 + Math.random()*0.3;
+    p.style.left = Math.random()*100 + '%';
+    p.style.top = Math.random()*100 + '%';
+    p.style.animationDuration = (5 + Math.random()*10) + 's';
+    p.style.animationDelay = Math.random()*5 + 's';
+    container.appendChild(p);
+  }
+}
+
+// ─── PULSE ANIMATION (for threat count) ───
+const style = document.createElement('style');
+style.textContent = '@keyframes pulse{0%,100%{opacity:1;text-shadow:0 0 0 transparent}50%{opacity:.7;text-shadow:0 0 20px rgba(239,68,68,0.5)}}';
+document.head.appendChild(style);
+
+// ─── INIT ───
+window.addEventListener('DOMContentLoaded', () => {
+  buildBars();
+  spawnParticles();
+  setTimeout(drawTopology, 500);
+});
+
+// ─── KPI COUNT-UP ───
+document.querySelectorAll('.kpi-value').forEach(el => {
+  const text = el.textContent;
+  const num = parseFloat(text.replace(/[^\d,\.]/g,'').replace(',','.'));
+  if (!isNaN(num) && num > 1) {
+    const original = el.textContent;
+    el.textContent = '0';
+    let start = 0;
+    const duration = 1200;
+    const startTime = performance.now();
+    function step(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      if (progress < 1) {
+        el.textContent = original; // simplified — show final for non-integer
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = original;
+      }
+    }
+    setTimeout(() => requestAnimationFrame(step), 300);
+  }
+});
+</script>
+</body>
+</html>
